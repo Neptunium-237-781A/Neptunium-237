@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ELEMENTUM — Periodic Table</title>
+<!-- Modern SVG favicon: atom symbol -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%23050810'/><ellipse cx='50' cy='50' rx='38' ry='16' fill='none' stroke='%2300d4ff' stroke-width='4'/><ellipse cx='50' cy='50' rx='38' ry='16' fill='none' stroke='%2300d4ff' stroke-width='4' transform='rotate(60 50 50)'/><ellipse cx='50' cy='50' rx='38' ry='16' fill='none' stroke='%2300d4ff' stroke-width='4' transform='rotate(120 50 50)'/><circle cx='50' cy='50' r='7' fill='%2300d4ff'/></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050810;
+    --surface: #0d1117;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --glow: rgba(0,212,255,0.15);
+    --alkali: #ff4757;
+    --alkaline: #ff6b35;
+    --transition: #ffd32a;
+    --posttrans: #7bed9f;
+    --metalloid: #70a1ff;
+    --nonmetal: #00d4ff;
+    --halogen: #a29bfe;
+    --noble: #fd79a8;
+    --lanthanide: #fdcb6e;
+    --actinide: #e17055;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  header {
+    position: relative; z-index: 10;
+    padding: 2rem 3rem 1rem;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 0.1em;
+    background: linear-gradient(135deg, var(--accent) 0%, #ffffff 60%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    line-height: 1;
+  }
+  .logo span {
+    font-family: 'Space Mono', monospace; font-size: 0.9rem; display: block;
+    letter-spacing: 0.3em; background: none; -webkit-text-fill-color: var(--muted); color: var(--muted);
+    margin-top: 0.2rem;
+  }
+  .search-wrap { position: relative; }
+  #search {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    font-family: 'Space Mono', monospace; font-size: 0.75rem; padding: 0.6rem 1rem;
+    border-radius: 4px; width: 220px; outline: none; letter-spacing: 0.05em;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  #search:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--glow); }
+  #search::placeholder { color: var(--muted); }
+  .legend {
+    position: relative; z-index: 10; padding: 1rem 3rem;
+    display: flex; flex-wrap: wrap; gap: 0.6rem 1.2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .leg-item {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.6rem; letter-spacing: 0.1em; color: var(--muted);
+    text-transform: uppercase; cursor: pointer; transition: color 0.2s;
+  }
+  .leg-item:hover { color: var(--text); }
+  .leg-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .table-container { position: relative; z-index: 10; padding: 1.5rem 1rem; overflow-x: auto; }
+  .periodic-table {
+    display: grid;
+    grid-template-columns: repeat(18, 58px);
+    grid-template-rows: repeat(10, 58px);
+    gap: 3px;
+    min-width: fit-content; margin: 0 auto; width: max-content;
+  }
+  .element {
+    position: relative; border: 1px solid rgba(255,255,255,0.06); border-radius: 4px;
+    cursor: pointer; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 2px; transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, z-index 0s;
+    background: var(--surface); overflow: hidden;
+  }
+  .element::before { content: ''; position: absolute; inset: 0; opacity: 0.12; transition: opacity 0.2s; }
+  .element:hover {
+    transform: scale(1.2); z-index: 100; border-color: currentColor;
+    box-shadow: 0 0 20px currentColor, 0 4px 30px rgba(0,0,0,0.5);
+  }
+  .element:hover::before { opacity: 0.25; }
+  .el-num { font-size: 0.45rem; color: var(--muted); line-height: 1; align-self: flex-start; padding-left: 3px; }
+  .el-sym { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.15rem; line-height: 1; margin-top: 1px; }
+  .el-name { font-size: 0.38rem; color: rgba(255,255,255,0.6); line-height: 1; letter-spacing: 0.02em; margin-top: 2px; }
+  .el-mass { font-size: 0.35rem; color: var(--muted); line-height: 1; }
+  .alkali { color: var(--alkali); } .alkali::before { background: var(--alkali); }
+  .alkaline { color: var(--alkaline); } .alkaline::before { background: var(--alkaline); }
+  .transition-metal { color: var(--transition); } .transition-metal::before { background: var(--transition); }
+  .post-transition { color: var(--posttrans); } .post-transition::before { background: var(--posttrans); }
+  .metalloid { color: var(--metalloid); } .metalloid::before { background: var(--metalloid); }
+  .nonmetal { color: var(--nonmetal); } .nonmetal::before { background: var(--nonmetal); }
+  .halogen { color: var(--halogen); } .halogen::before { background: var(--halogen); }
+  .noble-gas { color: var(--noble); } .noble-gas::before { background: var(--noble); }
+  .lanthanide { color: var(--lanthanide); } .lanthanide::before { background: var(--lanthanide); }
+  .actinide { color: var(--actinide); } .actinide::before { background: var(--actinide); }
+  .element.dimmed { opacity: 0.15; transform: none !important; box-shadow: none !important; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(10px); z-index: 1000;
+    display: none; align-items: center; justify-content: center; padding: 2rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; max-width: 680px; width: 100%;
+    position: relative; overflow: hidden;
+    animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-height: 90vh; display: flex; flex-direction: column;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal-top {
+    padding: 1.8rem 2rem; display: flex; gap: 1.6rem; align-items: flex-start;
+    border-bottom: 1px solid var(--border); position: relative; flex-shrink: 0;
+  }
+  .modal-top::before { content: ''; position: absolute; inset: 0; opacity: 0.05; }
+  .modal-symbol-block {
+    flex-shrink: 0; width: 96px; height: 96px;
+    border: 2px solid currentColor; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative; z-index: 1;
+  }
+  .modal-number { font-size: 0.65rem; color: var(--muted); align-self: flex-start; padding-left: 6px; }
+  .modal-sym { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2.8rem; line-height: 1; }
+  .modal-mass-sm { font-size: 0.55rem; color: rgba(255,255,255,0.5); }
+  .modal-info { flex: 1; position: relative; z-index: 1; }
+  .modal-name { font-family: 'Bebas Neue', sans-serif; font-size: 2.3rem; line-height: 1; letter-spacing: 0.05em; }
+  .modal-category { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 0.3rem; margin-bottom: 0.8rem; }
+  .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+  .stat { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 4px; padding: 0.4rem 0.6rem; }
+  .stat-label { font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.15rem; }
+  .stat-value { font-size: 0.72rem; font-weight: 700; }
+
+  /* TABS */
+  .modal-tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    flex-shrink: 0; background: rgba(0,0,0,0.2);
+  }
+  .tab-btn {
+    flex: 1; padding: 0.7rem 1rem; font-family: 'Space Mono', monospace;
+    font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); background: none; border: none; cursor: pointer;
+    border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s;
+    margin-bottom: -1px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* TAB CONTENT */
+  .modal-body { overflow-y: auto; flex: 1; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Overview tab */
+  .modal-desc {
+    padding: 1.4rem 2rem; font-size: 0.78rem; line-height: 1.9;
+    color: rgba(255,255,255,0.75);
+  }
+
+  /* Deep dive tab */
+  .deep-dive { padding: 1.4rem 2rem; }
+  .deep-section { margin-bottom: 1.4rem; }
+  .deep-section-title {
+    font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 0.6rem; font-weight: 700;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .deep-section-title::after { content: ''; flex: 1; height: 1px; background: rgba(0,212,255,0.15); }
+  .deep-text { font-size: 0.75rem; line-height: 1.85; color: rgba(255,255,255,0.68); }
+  .deep-facts {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.6rem;
+  }
+  .deep-fact {
+    background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.5rem 0.7rem;
+  }
+  .deep-fact-label { font-size: 0.48rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.2rem; }
+  .deep-fact-value { font-size: 0.7rem; font-weight: 700; color: var(--text); }
+
+  /* Uses tab */
+  .uses-panel { padding: 1.4rem 2rem; }
+  .use-item {
+    display: flex; gap: 0.8rem; align-items: flex-start; margin-bottom: 0.9rem;
+    padding-bottom: 0.9rem; border-bottom: 1px solid var(--border);
+  }
+  .use-item:last-child { border-bottom: none; margin-bottom: 0; }
+  .use-icon {
+    font-size: 1.4rem; flex-shrink: 0; width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.04); border-radius: 8px;
+  }
+  .use-content {}
+  .use-title { font-size: 0.7rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+  .use-desc { font-size: 0.68rem; line-height: 1.6; color: rgba(255,255,255,0.55); }
+
+  .modal-close {
+    position: absolute; top: 1rem; right: 1rem;
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    cursor: pointer; width: 30px; height: 30px; border-radius: 4px; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10; transition: color 0.2s, border-color 0.2s;
+  }
+  .modal-close:hover { color: var(--text); border-color: var(--text); }
+
+  .secret-btn {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+    cursor: pointer; z-index: 999;
+    transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+  }
+  .secret-btn:hover { background: rgba(0,212,255,0.3); box-shadow: 0 0 12px var(--accent); transform: scale(1.5); }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .empty { background: transparent; border: none; pointer-events: none; }
+  @media (max-width: 900px) {
+    header { padding: 1.5rem; flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .legend { padding: 1rem 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    Elementum
+    <span>Interactive Periodic Table of Elements</span>
+  </div>
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="Search element, symbol, number...">
+  </div>
+</header>
+
+<div class="legend">
+  <div class="leg-item" data-cat="alkali"><div class="leg-dot" style="background:var(--alkali)"></div>Alkali Metal</div>
+  <div class="leg-item" data-cat="alkaline"><div class="leg-dot" style="background:var(--alkaline)"></div>Alkaline Earth</div>
+  <div class="leg-item" data-cat="transition-metal"><div class="leg-dot" style="background:var(--transition)"></div>Transition Metal</div>
+  <div class="leg-item" data-cat="post-transition"><div class="leg-dot" style="background:var(--posttrans)"></div>Post-Transition</div>
+  <div class="leg-item" data-cat="metalloid"><div class="leg-dot" style="background:var(--metalloid)"></div>Metalloid</div>
+  <div class="leg-item" data-cat="nonmetal"><div class="leg-dot" style="background:var(--nonmetal)"></div>Nonmetal</div>
+  <div class="leg-item" data-cat="halogen"><div class="leg-dot" style="background:var(--halogen)"></div>Halogen</div>
+  <div class="leg-item" data-cat="noble-gas"><div class="leg-dot" style="background:var(--noble)"></div>Noble Gas</div>
+  <div class="leg-item" data-cat="lanthanide"><div class="leg-dot" style="background:var(--lanthanide)"></div>Lanthanide</div>
+  <div class="leg-item" data-cat="actinide"><div class="leg-dot" style="background:var(--actinide)"></div>Actinide</div>
+</div>
+
+<div class="table-container">
+  <div class="periodic-table" id="ptable"></div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal" id="modalContent">
+    <button class="modal-close" id="modalClose">✕</button>
+    <div class="modal-top">
+      <div class="modal-symbol-block" id="mSymBlock">
+        <div class="modal-number" id="mNum"></div>
+        <div class="modal-sym" id="mSym"></div>
+        <div class="modal-mass-sm" id="mMassSm"></div>
+      </div>
+      <div class="modal-info">
+        <div class="modal-name" id="mName"></div>
+        <div class="modal-category" id="mCat"></div>
+        <div class="modal-stats" id="mStats"></div>
+      </div>
+    </div>
+    <div class="modal-tabs">
+      <button class="tab-btn active" data-tab="overview">Overview</button>
+      <button class="tab-btn" data-tab="deepdive">Deep Dive</button>
+      <button class="tab-btn" data-tab="uses">Applications</button>
+    </div>
+    <div class="modal-body">
+      <div class="tab-panel active" id="tab-overview">
+        <div class="modal-desc" id="mDesc"></div>
+      </div>
+      <div class="tab-panel" id="tab-deepdive">
+        <div class="deep-dive" id="mDeepDive"></div>
+      </div>
+      <div class="tab-panel" id="tab-uses">
+        <div class="uses-panel" id="mUses"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="secret-btn" id="secretBtn" title=""></button>
+
+<script>
+// Element data: [num, sym, name, mass, cat, group, period, phase, discovered, overview, deepDive{}, uses[]]
+// deepDive: { history, chemistry, biology, funFact, meltPoint, boilPoint, density, electronegativity, oxidationStates, isotopes }
+// uses: [ {icon, title, desc} ]
+
+const elementData = {
+  1: {
+    overview: `Hydrogen is the lightest and most abundant element in the universe, making up about 75% of all normal matter by mass. In stars, hydrogen nuclei fuse together under extreme pressure and temperature to form helium, releasing the energy that makes stars shine. On Earth, hydrogen exists mainly bonded to oxygen as water, covering 71% of the planet's surface. Pure hydrogen gas (H₂) is colorless, odorless, and highly flammable — a single spark can ignite it. The element plays a starring role in the future of clean energy: hydrogen fuel cells combine H₂ with oxygen to generate electricity, emitting only water vapor as exhaust.`,
+    deep: {
+      history: `Henry Cavendish first isolated hydrogen gas in 1766, calling it "inflammable air." Antoine Lavoisier named it hydrogen in 1783 from the Greek "hydro" (water) and "genes" (forming), recognizing that it produces water when burned.`,
+      chemistry: `Hydrogen forms covalent bonds with most non-metals and ionic bonds with metals (hydrides). Its single electron makes it uniquely versatile — it can act like an alkali metal (losing its electron) or a halogen (gaining one). It forms the backbone of all organic chemistry.`,
+      biology: `Every molecule of water, every amino acid, every DNA strand contains hydrogen. Hydrogen bonds — weak attractions between H and electronegative atoms — are responsible for water's high surface tension, DNA's double helix structure, and protein folding.`,
+      funFact: `If you could convert all the hydrogen in a glass of water to energy via fusion, it would power a house for over 800 years.`,
+      meltPoint: '-259.1°C', boilPoint: '-252.9°C', density: '0.0000899 g/cm³',
+      electronegativity: '2.20', oxidationStates: '-1, +1', isotopes: 'Protium (¹H), Deuterium (²H), Tritium (³H, radioactive)'
+    },
+    uses: [
+      { icon: '🚀', title: 'Rocket Fuel', desc: 'Liquid hydrogen is the fuel of choice for the Space Shuttle main engines and the Ariane 5 rocket, providing the highest specific impulse of any chemical propellant.' },
+      { icon: '⚡', title: 'Fuel Cells', desc: 'Hydrogen fuel cells power electric vehicles like the Toyota Mirai, buses, and forklifts with zero tailpipe emissions — only water vapor exits the exhaust.' },
+      { icon: '🏭', title: 'Industrial Chemistry', desc: 'The Haber-Bosch process combines hydrogen with nitrogen to make ammonia (NH₃) — the basis of all synthetic fertilizers that feed roughly half the world\'s population.' },
+      { icon: '🧪', title: 'Hydrogenation', desc: 'Food manufacturers hydrogenate vegetable oils to produce margarine and solid cooking fats, extending shelf life by saturating carbon-carbon double bonds with hydrogen.' },
+    ]
+  },
+  2: {
+    overview: `Helium is the second most abundant element in the observable universe and the second lightest element. It is a colorless, odorless, tasteless noble gas that is completely non-reactive under virtually all conditions — it has never been observed forming a stable chemical compound on Earth. Helium was first detected spectroscopically in the Sun's corona during the 1868 solar eclipse, 27 years before it was found on Earth. It has the lowest boiling point of any substance (-269°C, just 4 degrees above absolute zero). Earth's helium supply comes entirely from the radioactive decay of uranium and thorium underground, and once it escapes into the atmosphere it is lost to space forever.`,
+    deep: {
+      history: `Pierre Janssen and Norman Lockyer independently observed a mysterious yellow spectral line in the Sun in 1868 — an element unknown on Earth. William Ramsay isolated helium on Earth in 1895 from the uranium ore cleveite. Its name comes from Helios, the Greek god of the Sun.`,
+      chemistry: `Helium has a completely filled 1s² electron shell, giving it exceptional stability. Its first ionization energy is the highest of any element. Under extreme pressures (millions of atmospheres), theoretical models predict helium might form compounds — HelNe₂ has been detected experimentally in 2018.`,
+      biology: `Helium has no known biological role. Breathing a helium-oxygen mixture (Heliox) is used in deep-sea diving and to treat severe asthma, as helium's low density reduces breathing resistance.`,
+      funFact: `The world's helium supply is finite and non-renewable on human timescales. Helium used in party balloons floats away and is permanently lost — many scientists consider this a wasteful use of a critical industrial resource.`,
+      meltPoint: '-272.2°C (under pressure)', boilPoint: '-268.9°C', density: '0.000164 g/cm³',
+      electronegativity: 'N/A', oxidationStates: '0', isotopes: 'Helium-3 (³He, rare), Helium-4 (⁴He, 99.999%)'
+    },
+    uses: [
+      { icon: '🧲', title: 'MRI Machines', desc: 'Liquid helium at -269°C cools the superconducting magnets in MRI scanners, enabling the powerful magnetic fields needed to image soft tissues without radiation.' },
+      { icon: '🔬', title: 'Cryogenics', desc: 'Helium is the only coolant that can reach temperatures within 4 degrees of absolute zero, enabling research in quantum computing, superconductivity, and particle physics.' },
+      { icon: '🎈', title: 'Balloons & Airships', desc: 'Helium lifts about 1 gram per liter. Unlike flammable hydrogen, it is completely safe — the Hindenburg disaster prompted the switch to helium for modern airships.' },
+      { icon: '🔭', title: 'Space Telescopes', desc: 'The James Webb Space Telescope uses cryogenic helium to cool its infrared detectors to just 7 Kelvin, allowing it to detect ancient light from the first galaxies.' },
+    ]
+  },
+  6: {
+    overview: `Carbon is the chemical basis of all known life on Earth. Its extraordinary ability to form four stable covalent bonds simultaneously allows it to build chains, rings, and complex three-dimensional structures — creating the millions of organic compounds that make biology possible. Carbon exists in several spectacular allotropic forms: diamond (the hardest natural material), graphite (a soft conductor), graphene (a one-atom-thick sheet stronger than steel), and buckminsterfullerene C₆₀ (a hollow soccer-ball molecule). The trace isotope carbon-14 decays at a known rate, making radiocarbon dating possible for organic materials up to 50,000 years old.`,
+    deep: {
+      history: `Carbon has been known since prehistoric times as charcoal and soot. The diamond form was identified as pure carbon by Antoine Lavoisier in 1772. The name comes from Latin "carbo" meaning coal. Graphene was isolated from graphite by Andre Geim and Konstantin Novoselov in 2004, earning them the 2010 Nobel Prize in Physics.`,
+      chemistry: `Carbon's four valence electrons allow sp³, sp², and sp hybridization, producing tetrahedral, planar, and linear bond geometries. This versatility is why over 10 million carbon compounds are known — more than all other elements combined. Carbon-carbon bonds are among the most stable in chemistry.`,
+      biology: `Carbon makes up 18.5% of the human body by mass. Every protein, fat, carbohydrate, nucleic acid, and hormone is a carbon compound. The carbon cycle — atmospheric CO₂ fixed by plants, passed through food chains, returned by respiration and decay — is the fundamental engine of the biosphere.`,
+      funFact: `A one-atom-thick sheet of graphene is 200 times stronger than steel by weight. A graphene hammock the size of a football field would weigh less than a cat and could support that cat's weight without breaking.`,
+      meltPoint: '3,642°C (sublimes)', boilPoint: '4,827°C', density: '2.267 g/cm³ (graphite)',
+      electronegativity: '2.55', oxidationStates: '-4 to +4', isotopes: 'C-12 (98.9%), C-13 (1.1%), C-14 (trace, radioactive)'
+    },
+    uses: [
+      { icon: '💎', title: 'Diamonds', desc: 'Natural and synthetic diamonds are used in jewelry, cutting tools, drill bits, and as heat sinks in electronics. Diamond is the hardest natural substance and an excellent thermal conductor.' },
+      { icon: '⚡', title: 'Carbon Fiber', desc: 'Carbon fiber reinforced polymer is used in aircraft, racing cars, wind turbine blades, and sporting equipment — offering steel-level strength at one-fifth the weight.' },
+      { icon: '🔋', title: 'Batteries', desc: 'Graphite is the anode material in virtually all lithium-ion batteries. Graphene and carbon nanotubes are being developed for next-generation energy storage.' },
+      { icon: '🌡️', title: 'Carbon Dating', desc: 'Radiocarbon (¹⁴C) analysis has revolutionized archaeology and history, dating everything from the Turin Shroud to ancient papyrus to prehistoric cave art.' },
+    ]
+  },
+  8: {
+    overview: `Oxygen is the third most abundant element in the universe and the most abundant element in Earth's crust by mass. It makes up 21% of Earth's atmosphere and is absolutely essential to the respiration of most complex life forms. Oxygen is a powerful oxidizing agent — it reacts with almost every other element, and the energy released in these reactions (combustion, metabolism) drives both civilization and biology. The ozone layer (O₃) in the stratosphere absorbs 97–99% of the Sun's harmful ultraviolet radiation, making complex life on land possible. Oxygen was independently discovered by Carl Wilhelm Scheele and Joseph Priestley in 1771–1774.`,
+    deep: {
+      history: `Carl Wilhelm Scheele prepared oxygen in 1771 but didn't publish until 1777. Joseph Priestley independently isolated it in 1774 by heating mercury oxide. Antoine Lavoisier named it "oxygen" from Greek meaning "acid-former," correctly identifying it as the element in air that supports combustion, though his acid theory was later proved wrong.`,
+      chemistry: `Oxygen is the second most electronegative element after fluorine. It forms oxides with nearly every element. Molecular oxygen (O₂) is paramagnetic — it has two unpaired electrons — making liquid oxygen attracted to magnets. Singlet oxygen (an excited state) is used in photodynamic cancer therapy.`,
+      biology: `Mitochondria use oxygen as the terminal electron acceptor in cellular respiration, producing ATP — the universal energy currency of life. Hemoglobin's iron atom binds and releases O₂ in response to partial pressure, efficiently transporting oxygen through the bloodstream.`,
+      funFact: `Liquid oxygen is pale blue in color. It is so strongly attracted to magnets that a stream of liquid oxygen poured between two magnet poles will actually be diverted, bending mid-air.`,
+      meltPoint: '-218.8°C', boilPoint: '-183.0°C', density: '0.00143 g/cm³',
+      electronegativity: '3.44', oxidationStates: '-2, -1, 0', isotopes: 'O-16 (99.76%), O-17 (0.04%), O-18 (0.20%)'
+    },
+    uses: [
+      { icon: '🏥', title: 'Medical Oxygen', desc: 'Supplemental oxygen is essential for treating respiratory failure, during surgery, and in neonatal care. Oxygen concentrators separate O₂ from air for home patients with COPD.' },
+      { icon: '🚀', title: 'Rocket Oxidizer', desc: 'Liquid oxygen (LOX) is the oxidizer in most rocket engines including SpaceX Falcon 9, paired with liquid methane or kerosene to produce the combustion that provides thrust.' },
+      { icon: '⚗️', title: 'Steel Production', desc: 'The basic oxygen steelmaking process blows pure oxygen through molten pig iron to remove carbon and impurities, producing over 70% of the world\'s steel.' },
+      { icon: '💧', title: 'Water Treatment', desc: 'Ozone (O₃) generated from oxygen is used to disinfect drinking water and treat wastewater, being 3,000 times more effective than chlorine against many pathogens.' },
+    ]
+  },
+  26: {
+    overview: `Iron is the most used metal in human civilization, forming the backbone of modern infrastructure — buildings, bridges, cars, ships, and machinery. It is the most abundant element in Earth by mass (comprising its core) and the fourth most abundant in the crust. Iron is the central atom in hemoglobin, the protein that carries oxygen in red blood cells, making it literally essential to animal life. The discovery of iron smelting around 1200 BCE ended the Bronze Age and began the Iron Age, transforming human civilization. Steel — iron alloyed with a small amount of carbon — is the most important engineered material in the modern world.`,
+    deep: {
+      history: `Iron smelting was independently developed in multiple regions around 1200–1000 BCE, marking the start of the Iron Age. The alchemical symbol for iron was the same as Mars (♂), reflecting its association with the red planet and warfare. The Eiffel Tower is made of puddled iron — a purer form than cast iron.`,
+      chemistry: `Iron's two common oxidation states (+2 ferrous, +3 ferric) give it rich chemistry. Fe²⁺ carries oxygen in hemoglobin; Fe³⁺ forms rust (iron oxide). Iron catalysts are central to the Haber-Bosch process (ammonia synthesis) and the Fischer-Tropsch process (synthetic fuel production).`,
+      biology: `The human body contains about 4 grams of iron, mostly in hemoglobin. Iron deficiency anemia affects over 1.2 billion people worldwide. Iron also functions in cytochromes (cellular respiration enzymes) and ferritin (iron storage protein). Too much iron is also toxic, causing hemochromatosis.`,
+      funFact: `A single iron meteorite found in Namibia — the Hoba meteorite — weighs 60 tonnes and is the largest known meteorite on Earth. It is almost entirely nickel-iron, like Earth's own core.`,
+      meltPoint: '1,538°C', boilPoint: '2,861°C', density: '7.874 g/cm³',
+      electronegativity: '1.83', oxidationStates: '-2, 0, +1, +2, +3, +4, +5, +6', isotopes: 'Fe-56 (91.75%), Fe-54, Fe-57, Fe-58'
+    },
+    uses: [
+      { icon: '🏗️', title: 'Construction Steel', desc: 'Reinforced concrete uses iron rebar to add tensile strength. Structural steel frames modern skyscrapers, bridges, and stadiums — the Empire State Building used 60,000 tons of steel.' },
+      { icon: '🩸', title: 'Biological Oxygen Transport', desc: 'Every red blood cell contains ~250 million hemoglobin molecules, each with 4 iron atoms that bind and release oxygen. Without iron, cellular respiration is impossible.' },
+      { icon: '🧲', title: 'Electromagnets & Transformers', desc: 'Soft iron\'s high magnetic permeability and low coercivity make it ideal for transformer cores, electromagnet yokes, and electric motor components.' },
+      { icon: '🍳', title: 'Cast Iron Cookware', desc: 'Cast iron\'s heat retention and even distribution makes it prized for cooking. It is one of the oldest engineering materials, used in cooking vessels, engine blocks, and pipes.' },
+    ]
+  },
+  79: {
+    overview: `Gold has captivated humanity for millennia — its resistance to corrosion, brilliant luster, malleability, and rarity make it a unique material. A single gram of gold can be beaten into a sheet covering one square meter, or drawn into 3 kilometers of wire. Gold's exceptional electrical conductivity and corrosion resistance make it indispensable in high-reliability electronics — every smartphone, computer, and satellite contains gold contacts. Ancient Egyptians used gold extensively, believing it was the flesh of the gods. The gold standard underpinned global currencies for centuries. Gold nanoparticles have remarkable optical properties exploited in medical diagnostics and cancer therapy.`,
+    deep: {
+      history: `Gold is one of the first metals worked by humans, with gold artifacts found in Bulgarian graves dating to 4500 BCE. The California Gold Rush of 1848 transformed the American West. The term "carat" for gold purity (24 carat = pure gold) comes from the carob seed, historically used as a weight standard.`,
+      chemistry: `Gold's chemical inertness comes from relativistic effects on its 6s electrons — they contract and screen the d-orbitals, reducing reactivity. It dissolves only in aqua regia (a mix of nitric and hydrochloric acids). Gold is a d-block transition metal in Group 11, the coinage metals.`,
+      biology: `Gold has no known biological role, but gold compounds have medical uses. Sodium aurothiomalate was used to treat rheumatoid arthritis for decades. Gold nanoparticles coated with antibodies are used in lateral flow tests — including COVID-19 rapid tests.`,
+      funFact: `All the gold ever mined in human history — roughly 200,000 tonnes — would fit into a cube about 22 meters on each side. Oceans contain an estimated 20 million tons of dissolved gold, but extraction isn't economically feasible.`,
+      meltPoint: '1,064°C', boilPoint: '2,856°C', density: '19.30 g/cm³',
+      electronegativity: '2.54', oxidationStates: '-1, 0, +1, +2, +3, +5', isotopes: 'Au-197 (100% stable, only stable isotope)'
+    },
+    uses: [
+      { icon: '💻', title: 'Electronics', desc: 'Gold-plated connectors, bonding wires, and contact surfaces in CPUs, memory chips, and connectors ensure reliable conductivity that won\'t corrode — critical in aerospace and medical devices.' },
+      { icon: '💍', title: 'Jewelry & Currency', desc: 'Over 50% of all gold demand is for jewelry. Central banks hold gold as a reserve asset — the US alone holds over 8,000 tonnes at Fort Knox. Gold ETFs allow investment without physical storage.' },
+      { icon: '🏥', title: 'Medical Applications', desc: 'Radioactive gold-198 is used in cancer radiation therapy. Gold nanoparticles enable photothermal cancer treatment and are the signal element in lateral flow immunoassay diagnostic tests.' },
+      { icon: '🛸', title: 'Space Technology', desc: 'Gold foil is used in spacecraft thermal blankets and visors because it reflects 99% of infrared radiation. The James Webb Space Telescope\'s mirror is coated in gold for optimal infrared reflectivity.' },
+    ]
+  },
+  92: {
+    overview: `Uranium is the heaviest naturally occurring element and the primary fuel of nuclear power. It was discovered in 1789 by Martin Heinrich Klaproth, who named it after the recently discovered planet Uranus. The critical discovery came in 1938 when Otto Hahn, Fritz Strassmann, Lise Meitner, and Otto Frisch identified nuclear fission — uranium nuclei splitting to release enormous energy. One kilogram of U-235 contains the energy equivalent of about 3,000 tonnes of coal. Natural uranium contains 99.3% of the isotope U-238 and only 0.7% of the fissile U-235 — enrichment processes increase the U-235 fraction for reactor fuel or weapons.`,
+    deep: {
+      history: `Martin Heinrich Klaproth isolated uranium oxide in 1789. Henri Becquerel discovered uranium's radioactivity accidentally in 1896. The Manhattan Project (1942–1945) weaponized uranium and plutonium, producing the atomic bombs dropped on Hiroshima (uranium gun-type) and Nagasaki (plutonium implosion-type).`,
+      chemistry: `Uranium has a complex d- and f-orbital electron configuration, giving it multiple oxidation states from +2 to +6. The most stable is +6, as in uranium hexafluoride (UF₆), the volatile compound used for uranium isotope separation. Uranyl (UO₂²⁺) ions give uranium minerals their characteristic yellow-green fluorescence.`,
+      biology: `Uranium is chemically toxic — it damages the kidneys — independently of its radioactivity. It mimics calcium in bone and can displace it. Depleted uranium (DU), mostly U-238, is used in armor-penetrating weapons and tank armor because of its extreme density.`,
+      funFact: `Before its radioactivity was understood, uranium was used as a yellow-orange glass colorant and ceramic glaze. "Vaseline glass" (uranium glass) glows brilliant green under UV light and was commonly sold as tableware before World War II.`,
+      meltPoint: '1,132°C', boilPoint: '4,131°C', density: '19.05 g/cm³',
+      electronegativity: '1.38', oxidationStates: '+2, +3, +4, +5, +6', isotopes: 'U-238 (99.27%), U-235 (0.72%, fissile), U-234 (0.0054%)'
+    },
+    uses: [
+      { icon: '⚛️', title: 'Nuclear Power', desc: 'Enriched uranium pellets (3–5% U-235) fuel light water reactors that produce about 10% of the world\'s electricity, including ~20% in the US and ~70% in France — with no carbon emissions.' },
+      { icon: '⚗️', title: 'Isotope Production', desc: 'Uranium-235 fission in reactors produces molybdenum-99, the parent of technetium-99m — the world\'s most widely used nuclear medicine isotope for imaging heart disease and cancer.' },
+      { icon: '🛡️', title: 'Depleted Uranium Armor', desc: 'Depleted uranium\'s extreme density (19 g/cm³) makes it effective for armor-piercing ammunition and tank armor plating. The M1 Abrams tank uses DU composite armor.' },
+      { icon: '🌍', title: 'Geological Dating', desc: 'The decay of U-238 to Pb-206 (half-life 4.47 billion years) enables uranium-lead radiometric dating of rocks and meteorites, helping establish Earth\'s age at 4.54 billion years.' },
+    ]
+  }
+};
+
+// Default deep data for elements without custom entries
+function getDeepData(num, name, sym, mass, cat, group, period, phase, disc) {
+  const d = elementData[num];
+  if (d) return d;
+  return {
+    overview: null,
+    deep: {
+      history: `${name} (symbol: ${sym}) was first characterized in ${disc}. Its name and classification as a ${categoryNames[cat]} reflect its position in Period ${period}${group ? ', Group ' + group : ', f-block'} of the periodic table.`,
+      chemistry: `With atomic number ${num} and atomic mass ${mass} u, ${name} exhibits the characteristic chemical behavior of the ${categoryNames[cat]} group. Its electron configuration determines its typical oxidation states and bonding behavior with other elements.`,
+      biology: `${name}'s biological role${num < 84 ? ' varies depending on concentration and form. Many elements are essential micronutrients while others may be toxic at elevated levels.' : ' is limited or non-existent, as heavier elements beyond bismuth are all radioactive and not incorporated into biological systems under normal conditions.'}`,
+      funFact: `${name} was discovered in ${disc}. Its atomic mass of ${mass} u represents the weighted average of its naturally occurring isotopes.`,
+      meltPoint: 'See reference data', boilPoint: 'See reference data', density: 'See reference data',
+      electronegativity: 'See reference data', oxidationStates: 'Variable', isotopes: 'See reference data'
+    },
+    uses: [
+      { icon: '🔬', title: 'Scientific Research', desc: `${name} is studied for its chemical and physical properties in laboratory settings worldwide.` },
+      { icon: '⚙️', title: 'Industrial Applications', desc: `${name} and its compounds are used in various industrial processes depending on its specific chemical properties.` },
+    ]
+  };
+}
+
+const elements = [
+  [1,'H','Hydrogen',1.008,'nonmetal',1,1,'Gas',1766,'The lightest and most abundant element in the universe, making up about 75% of all normal matter by mass. Stars are mostly hydrogen, and it fuses into helium powering stellar energy. On Earth, it exists primarily as water (H₂O). Hydrogen is a colorless, odorless gas at room temperature and is the fuel of choice for future clean energy systems due to its high energy density and zero carbon emissions when burned.'],
+  [2,'He','Helium',4.003,'noble-gas',18,1,'Gas',1895,'The second most abundant element in the observable universe. Helium is a colorless, odorless, tasteless noble gas — completely inert and non-reactive under standard conditions. It was first detected in the Sun via spectroscopy before being found on Earth. Helium has the lowest boiling point of any element and is critical for cryogenics, MRI machines, and as a lifting gas for balloons and airships. Earth\'s helium comes from radioactive decay underground.'],
+  [3,'Li','Lithium',6.941,'alkali',1,2,'Solid',1817,'A soft, silvery-white alkali metal and the lightest solid element. Lithium reacts vigorously with water and must be stored under oil. It is the critical material in rechargeable lithium-ion batteries powering smartphones, laptops, and electric vehicles — demand for lithium has surged dramatically in the clean energy transition. Lithium carbonate and lithium citrate are first-line treatments for bipolar disorder, stabilizing mood by modulating neurotransmitter signaling. Chile, Australia, and Argentina hold the world\'s largest lithium reserves in salt flat brines.'],
+  [4,'Be','Beryllium',9.012,'alkaline',2,2,'Solid',1798,'A steel-grey, lightweight alkaline earth metal with a strikingly high melting point of 1287°C for such a light element. Beryllium is six times stiffer than steel yet 30% lighter than aluminum, making it invaluable in aerospace precision instruments and X-ray equipment (it is nearly transparent to X-rays). It is used in nuclear reactor reflectors due to its low neutron absorption. Critically, beryllium dust and fumes are highly toxic — chronic beryllium disease (CBD) causes irreversible lung damage, and even tiny exposures can trigger it in sensitized individuals.'],
+  [5,'B','Boron',10.811,'metalloid',13,2,'Solid',1808,'A brown-black metalloid that does not occur naturally as a free element but is abundant in borax minerals. Boron is a key ingredient in borosilicate glass (Pyrex and laboratory glassware), which resists thermal shock. Borax (sodium tetraborate) is used in cleaning products and as a flux in metallurgy. In nuclear reactors, boron\'s enormous neutron absorption cross-section makes it essential for control rods and emergency shutdown systems. Boron nitride (BN) in its cubic form rivals diamond in hardness, and boron carbide is used in bulletproof vests.'],
+  [6,'C','Carbon',12.011,'nonmetal',14,2,'Solid','Ancient','The chemical basis of all known life and the fourth most abundant element in the universe by mass. Carbon\'s unique ability to form four stable covalent bonds, creating chains, rings, and complex 3D structures, underlies all of organic chemistry. It exists in spectacular allotropes: diamond (hardest natural substance), graphite (soft conductor), graphene (one-atom-thick, strongest material known), and buckminsterfullerene C₆₀. Carbon-14 radioactive dating can determine the age of organic materials up to 50,000 years old, revolutionizing archaeology and geology.'],
+  [7,'N','Nitrogen',14.007,'nonmetal',15,2,'Gas',1772,'Nitrogen makes up 78% of Earth\'s atmosphere as N₂, a remarkably inert diatomic gas. Its triple bond (one of the strongest in chemistry, 945 kJ/mol) makes it nearly unreactive under ordinary conditions. Yet nitrogen is essential for all life — it is a fundamental component of amino acids, DNA, RNA, and chlorophyll. The Haber-Bosch process (nitrogen + hydrogen → ammonia), developed in 1909, broke nitrogen\'s inertness industrially and enabled synthetic fertilizers that now feed roughly half of Earth\'s 8 billion people. Liquid nitrogen (-196°C) is widely used as an instant cryogenic coolant.'],
+  [8,'O','Oxygen',15.999,'nonmetal',16,2,'Gas',1774,'Oxygen is the third most abundant element in the universe, the most abundant in Earth\'s crust, and the second most abundant in the atmosphere at 21%. It is a powerfully reactive oxidizing agent that reacts with nearly every other element. Cellular respiration — the process powering all complex life — uses oxygen as the terminal electron acceptor, releasing energy from glucose and fats. The stratospheric ozone layer (O₃) shields Earth from 97–99% of the Sun\'s UV radiation, making land life possible. Liquid oxygen\'s pale blue color and paramagnetic nature (it bends in magnetic fields) are striking physical curiosities.'],
+  [9,'F','Fluorine',18.998,'halogen',17,2,'Gas',1886,'Fluorine is the most electronegative and chemically reactive of all elements — it reacts directly with almost everything, including noble gases like xenon and radon, and will even attack glass. It exists as a pale yellow diatomic gas (F₂) at room temperature and was notoriously difficult to isolate safely — many early chemists died or were injured trying. Henri Moissan finally isolated it in 1886, winning the 1906 Nobel Prize. Fluorine compounds include Teflon (polytetrafluoroethylene, PTFE), used in non-stick pans and plumbing tape; fluoride in toothpaste that prevents tooth decay; and HFCs (hydrofluorocarbons) in refrigeration.'],
+  [10,'Ne','Neon',20.180,'noble-gas',18,2,'Gas',1898,'Neon is a colorless, odorless noble gas best known for the brilliant orange-red glow it produces in electric discharge tubes — the iconic neon sign. Despite the name "neon signs," many colors actually use other gases: argon produces blue/lavender, krypton green, xenon white. Neon is the fourth most abundant element in the universe but extremely rare on Earth (18 ppm in the atmosphere). It is obtained by fractional distillation of liquid air. Neon has no known stable chemical compounds under normal conditions. Neon-helium gas lasers (HeNe) emit red light and were the first continuous-wave lasers produced.'],
+  [11,'Na','Sodium',22.990,'alkali',1,3,'Solid',1807,'A soft, silvery-white alkali metal so reactive it must be stored under mineral oil to prevent reaction with air moisture. Dropped in water, sodium reacts violently, hissing and skating across the surface as it produces hydrogen gas and sodium hydroxide. Yet sodium is absolutely essential to life — its ions (Na⁺) regulate fluid balance, generate electrical nerve impulses, and drive muscle contractions. The sodium-potassium pump in cell membranes moves 3 Na⁺ out and 2 K⁺ in, consuming about a third of the body\'s ATP. Sodium chloride (table salt) is arguably the most important chemical compound in human history.'],
+  [12,'Mg','Magnesium',24.305,'alkaline',2,3,'Solid',1808,'Magnesium burns with an intensely bright white flame — historically used in flash photography and still used in incendiary devices and fireworks. The element is vital for over 300 enzymatic reactions in the human body, including ATP synthesis, DNA replication, and protein synthesis. Magnesium is the central atom in chlorophyll, the molecule that makes photosynthesis possible — making it indirectly responsible for nearly all food on Earth. It is the lightest structural metal used in engineering, valuable in aerospace (aircraft fuselages), automotive (reducing weight for fuel efficiency), and electronics (laptop and phone frames).'],
+  [13,'Al','Aluminium',26.982,'post-transition',13,3,'Solid',1825,'The most abundant metal in Earth\'s crust and the third most abundant element overall at 8.2% by weight. Before an economical electrolytic extraction process (Hall-Héroult, 1886) was developed, aluminium was more precious than gold — Napoleon III reportedly served honored guests on aluminium plates while lesser guests used gold ones. Today aluminium\'s light weight, corrosion resistance, and recyclability make it central to transportation (aircraft, cars, bikes), packaging (cans), construction, and electrical wiring. Recycling aluminium uses only 5% of the energy needed to smelt new aluminium from bauxite ore.'],
+  [14,'Si','Silicon',28.086,'metalloid',14,3,'Solid',1824,'Silicon is the second most abundant element in Earth\'s crust (28%) and the absolute backbone of modern electronics. Its semiconductor properties — electrical conductivity between a metal and an insulator, tunable by adding impurities (doping) — make it the material of transistors, microchips, and solar cells. Silicon Valley is literally named for this element. A modern CPU contains over 100 billion silicon transistors smaller than a coronavirus. Silicon dioxide (SiO₂, silica) makes up most sand, quartz, and glass. Silicone polymers (distinct from elemental silicon) are used in sealants, lubricants, and medical implants.'],
+  [15,'P','Phosphorus',30.974,'nonmetal',15,3,'Solid',1669,'Phosphorus was first isolated by German alchemist Hennig Brand in 1669 from urine (he was trying to make gold) — it glows in the dark when exposed to oxygen, giving rise to its name from the Greek "light-bearer." White phosphorus is dangerously reactive and pyrophoric. Red phosphorus (used in match strikers) is much more stable. Phosphorus is absolutely essential to life: it forms the phosphate backbone of DNA and RNA, is the central atom of ATP (the energy currency of all cells), and comprises about 85% of bone mineral (calcium phosphate). Phosphate rock is mined as the primary source of phosphorus for fertilizers.'],
+  [16,'S','Sulfur',32.06,'nonmetal',16,3,'Solid','Ancient','Sulfur has been known since antiquity as "brimstone" — the burning stone of volcanic regions, associated with hellfire and divine punishment. It burns with a blue flame to produce sulfur dioxide, which has a pungent, choking smell. Sulfuric acid (H₂SO₄), produced from sulfur, is the most produced industrial chemical worldwide — essential for fertilizer production, petroleum refining, battery electrolyte, and metal processing. Sulfur-containing amino acids (cysteine, methionine) give the distinctive smell to garlic, onions, and rotten eggs. Sulfur crosslinks between cysteine residues give rubber its elasticity (vulcanization) and proteins their 3D structure.'],
+  [17,'Cl','Chlorine',35.45,'halogen',17,3,'Gas',1774,'Chlorine is a yellow-green, toxic gas with a sharp, suffocating smell. Its first large-scale use was devastating — German forces released 168 tonnes of chlorine gas at Ypres in 1915, the first major chemical weapons attack. Today, chlorine\'s powerful disinfecting ability is its most important attribute: small amounts added to drinking water and swimming pools kill bacteria, viruses, and parasites, preventing waterborne diseases that once killed millions. PVC (polyvinyl chloride), the world\'s third most widely used plastic, contains chlorine. Organochlorine compounds include herbicides, pesticides, and pharmaceuticals.'],
+  [18,'Ar','Argon',39.948,'noble-gas',18,3,'Gas',1894,'Argon makes up 0.93% of Earth\'s atmosphere — far more than all other noble gases combined — yet was not discovered until 1894 despite being everywhere. John William Strutt (Lord Rayleigh) and William Ramsay noticed that atmospheric nitrogen was slightly denser than chemically produced nitrogen and deduced a hidden component. Argon is used as an inert shielding gas in welding (MIG and TIG welding) to prevent oxidation of the hot metal. It fills incandescent and fluorescent light bulbs to prevent filament oxidation. Its low thermal conductivity makes it effective as an insulating gas in double-pane windows.'],
+  [19,'K','Potassium',39.098,'alkali',1,4,'Solid',1807,'Potassium is the most abundant cation (K⁺) inside living cells and is essential for virtually all cellular functions. The sodium-potassium-ATPase pump maintains a steep potassium gradient across cell membranes, which is the electrical basis of nerve impulses and heartbeat. Potassium reacts explosively with water — more violently than sodium — and must be stored under mineral oil. Its deficiency (hypokalemia) causes dangerous cardiac arrhythmias. Potassium chloride (KCl) and potassium nitrate (saltpeter) are primary fertilizer components — about 95% of potassium production goes to agriculture. Bananas are famously rich in potassium.'],
+  [20,'Ca','Calcium',40.078,'alkaline',2,4,'Solid',1808,'Calcium is the most abundant metal in the human body — the average adult contains about 1 kg, with 99% in bones and teeth as hydroxyapatite (calcium phosphate mineral). The remaining 1% in blood and cells is critical: calcium ions (Ca²⁺) trigger muscle contractions (including heartbeats), regulate neurotransmitter release, activate blood clotting, and serve as second messengers in cell signaling. Calcium carbonate (limestone, chalk, marble) is one of Earth\'s most common minerals, formed from ancient marine shells over millions of years. Portland cement — the basis of concrete — is made by heating limestone with clay.'],
+  [21,'Sc','Scandium',44.956,'transition-metal',3,4,'Solid',1879,'Scandium was predicted by Mendeleev in 1871 as "eka-boron" and discovered in 1879 by Lars Fredrik Nilson, validating Mendeleev\'s periodic table. Despite being more abundant in Earth\'s crust than lead, scandium is so dispersed that concentrated deposits are rare. It is used in aluminum-scandium alloys for high-performance sporting equipment (bicycle frames, baseball bats, lacrosse sticks) and aerospace components, significantly increasing strength without adding weight. High-intensity metal halide stadium lights use scandium iodide to produce a color rendering index close to natural daylight.'],
+  [22,'Ti','Titanium',47.867,'transition-metal',4,4,'Solid',1791,'Titanium has the highest strength-to-density ratio of any metallic element — as strong as steel but 45% lighter. Its outstanding corrosion resistance (even in seawater and chlorine) comes from a tenacious oxide layer that self-repairs. These properties make titanium indispensable in aerospace (jet engine compressor blades, airframe components), medical implants (hip and knee replacements, dental implants — it bonds directly with bone in osseointegration), and high-end consumer products. Titanium dioxide (TiO₂) is the white pigment in 90% of paints and sunscreens, responsible for the brilliant white of household paint.'],
+  [23,'V','Vanadium',50.942,'transition-metal',5,4,'Solid',1801,'Vanadium was discovered in 1801 and named after Vanadís, a name for the Norse goddess Freya. Its primary industrial use is as an alloying element — just 0.1% vanadium added to steel dramatically increases its strength, toughness, and heat resistance. Vanadium steel is used in drill bits, axles, crankshafts, and structural beams (including those in the Eiffel Tower). Vanadium redox flow batteries are one of the most promising technologies for grid-scale energy storage, already deployed in large installations in China and Japan. Vanadium compounds serve as catalysts in sulfuric acid production.'],
+  [24,'Cr','Chromium',51.996,'transition-metal',6,4,'Solid',1797,'Chromium\'s name comes from the Greek "chroma" (color) because its compounds span a remarkable spectrum — lead chromate yellow, chromium oxide green, ruby red (Cr³⁺ in alumina), emerald green (Cr³⁺ in beryl). Chromium plating produces the brilliant, hard, corrosion-resistant finish on car bumpers and appliances. Its most important use is in stainless steel (10.5%+ chromium), where it forms a passive oxide layer preventing rust. Chromium(III) is an essential trace nutrient in glucose metabolism. Chromium(VI) compounds, however, are potent carcinogens — the subject of the famous Erin Brockovich environmental lawsuit.'],
+  [25,'Mn','Manganese',54.938,'transition-metal',7,4,'Solid',1774,'Manganese is the 12th most abundant element in Earth\'s crust and essential for steel production — virtually all steel contains 0.15–1.8% manganese, which removes sulfur and oxygen impurities and increases strength and hardness. The dry cell battery you may have used contains manganese dioxide (MnO₂) as the cathode material. Manganese is a required trace nutrient: the enzyme superoxide dismutase (which protects cells from oxidative damage) requires manganese, as does arginase (in the urea cycle) and several enzymes involved in bone formation. Deep-sea manganese nodules are a potentially vast mineral resource covering large areas of the Pacific floor.'],
+  [26,'Fe','Iron',55.845,'transition-metal',8,4,'Solid','Ancient','Iron is the most used metal in human civilization, forming the backbone of modern infrastructure — buildings, bridges, cars, ships, and machinery. It is the most abundant element in Earth by mass (comprising the core) and the fourth most abundant in the crust. Iron is the central atom in hemoglobin, the protein that carries oxygen in red blood cells, making it literally essential to animal life. Iron smelting around 1200 BCE ended the Bronze Age and began the Iron Age, transforming civilization. Steel — iron alloyed with carbon — is the most important engineered material in the modern world, with over 1.9 billion tonnes produced annually.'],
+  [27,'Co','Cobalt',58.933,'transition-metal',9,4,'Solid',1735,'Cobalt\'s name comes from "kobold" — a mischievous German mine spirit blamed when cobalt ores poisoned miners (actually from arsenic in the ore). Cobalt blue, a vivid and historically significant pigment, has colored Islamic tiles, Ming Dynasty porcelain, and masterworks by Vermeer and van Gogh for centuries. Vitamin B12 — the only vitamin with a metal atom at its center — is a cobalt complex, making cobalt an essential trace nutrient. Modern lithium-cobalt-oxide (LiCoO₂) batteries in smartphones and laptops depend entirely on cobalt. The Democratic Republic of Congo produces 70% of world cobalt supply, raising significant ethical concerns about artisanal mining conditions.'],
+  [28,'Ni','Nickel',58.693,'transition-metal',10,4,'Solid',1751,'Nickel is named after "Nickel" (Old Nick, the devil) because German miners found that nickel ores looked like copper ore but yielded no copper, blaming supernatural interference. Nickel is a key component of stainless steel (nickel adds corrosion resistance and ductility), superalloys for jet turbine blades, and rechargeable batteries including NiMH batteries still used in hybrid vehicles. Nickel is also a catalyst in the hydrogenation of oils (margarine production) and in hydrogen fuel cell electrodes. About 10% of people have a nickel allergy — the most common metal allergy — triggered by cheap jewelry.'],
+  [29,'Cu','Copper',63.546,'transition-metal',11,4,'Solid','Ancient','Copper is one of the very few metals found in metallic form in nature, and one of the first metals worked by humans over 10,000 years ago — the Copper Age preceded the Bronze Age. Its exceptional electrical conductivity (second only to silver among common metals but much cheaper) makes it indispensable for electrical wiring: a typical house contains about 100 kg of copper. Copper has natural antimicrobial properties — bacteria die on copper surfaces within hours, making copper alloys valuable for hospital fittings. The Statue of Liberty is clad in 80 tonnes of copper, its iconic green patina formed by oxidation over decades.'],
+  [30,'Zn','Zinc',65.38,'transition-metal',12,4,'Solid',1746,'Zinc is used primarily to galvanize steel — a thin zinc coating applied by hot-dipping protects steel from corrosion for decades, extending the life of bridges, cars, and outdoor structures. The zinc sacrificial anode corrodes preferentially, protecting the underlying steel even at scratches. Zinc is an essential trace element with roles in over 300 enzymes, including those for DNA synthesis, wound healing, and immune function. Zinc deficiency (affecting over 2 billion people globally) impairs growth, immune response, and cognitive development. Zinc oxide in sunscreens physically blocks UV radiation, and ZnO white pigment is used as a food additive and in rubber vulcanization.'],
+  [31,'Ga','Gallium',69.723,'post-transition',13,4,'Solid',1875,'Gallium was predicted by Mendeleev as "eka-aluminium" and discovered by Paul-Émile Lecoq de Boisbaudran in 1875, spectroscopically — one of the greatest early triumphs of the periodic table. Its melting point of 29.8°C means it literally melts in your hand. Despite its obscurity, gallium arsenide (GaAs) and gallium nitride (GaN) are critical semiconductors: GaAs is used in solar cells and microwave frequency integrated circuits; GaN is revolutionizing power electronics with smaller, more efficient transistors in EV chargers and 5G equipment, and enables the blue/white LEDs in every modern LED light and TV display.'],
+  [32,'Ge','Germanium',72.630,'metalloid',14,4,'Solid',1886,'Germanium was predicted by Mendeleev as "eka-silicon" in 1871 and discovered in 1886 — its properties matched Mendeleev\'s predictions almost exactly, spectacularly validating the periodic table concept. The first working transistor, invented by Bardeen, Brattain, and Shockley at Bell Labs in 1947, used germanium. Silicon later replaced it for most uses, but germanium remains critical in specialized semiconductors, fiber optic cables (its high refractive index helps guide light efficiently), infrared optics (it is transparent to infrared light, used in thermal cameras and night vision), and high-efficiency multijunction solar cells for spacecraft.'],
+  [33,'As','Arsenic',74.922,'metalloid',15,4,'Solid','Ancient','Arsenic\'s toxicity has made it infamous throughout history — "inheritance powder" or "king\'s poison" was the nickname for white arsenic (As₂O₃) used by Italian Renaissance assassins, most notably the Borgias. It was nearly undetectable before the Marsh test was developed in 1836. Arsenic poisoning killed Napoleon Bonaparte (suspected from arsenic in his green-pigmented wallpaper). Today, gallium arsenide is a critical semiconductor, and arsenic trioxide is used as chemotherapy for acute promyelocytic leukemia. Arsenic naturally contaminates groundwater in Bangladesh, affecting over 50 million people with the world\'s largest mass poisoning.'],
+  [34,'Se','Selenium',78.971,'nonmetal',16,4,'Solid',1817,'Selenium was discovered by Jöns Jacob Berzelius in 1817 and named after Selene, the Greek moon goddess. Its dramatic increase in electrical conductivity when exposed to light — photoconductive behavior — was used in the first photoelectric exposure meters and early television camera tubes. Selenium is an essential micronutrient: the enzyme glutathione peroxidase, which protects cells from oxidative damage by neutralizing hydrogen peroxide, contains selenium at its active site. Both deficiency (causing Keshan disease, a cardiomyopathy) and excess (selenosis, causing hair loss and neurological damage) are serious health concerns. It is used in cadmium telluride solar cells and decolorizing glass.'],
+  [35,'Br','Bromine',79.904,'halogen',17,4,'Liquid',1826,'Bromine is one of only two elements (with mercury) that is liquid at room temperature. It is a reddish-brown, fuming, corrosive liquid with a suffocating smell — its name comes from the Greek "bromos" meaning stench. Bromine was once used to make leaded gasoline, silver bromide photographic film (still used in black-and-white photography), and organobromine flame retardants in electronics, textiles, and furniture. Tyrian purple — the most valuable dye of antiquity, costing more than gold by weight — was produced from bromine-containing compounds extracted from sea snails. Methyl bromide is a powerful fumigant but is being phased out due to ozone depletion.'],
+  [36,'Kr','Krypton',83.798,'noble-gas',18,4,'Gas',1898,'Krypton — famous as Superman\'s weakness — is in reality a completely harmless colorless gas. Krypton produces a white-to-cream discharge in gas tubes, used in specialized high-powered flash photography for high-speed ballistics and scientific imaging. From 1960 to 1983, the meter was officially defined as 1,650,763.73 wavelengths of orange-red light emitted by krypton-86 in a discharge lamp. Krypton fluoride (KrF) excimer lasers at 248 nm are essential in semiconductor lithography, used to etch circuit patterns onto microchips. Krypton-85 in the atmosphere is a signature of nuclear reprocessing activity, used for nuclear non-proliferation monitoring.'],
+  [37,'Rb','Rubidium',85.468,'alkali',1,5,'Solid',1861,'Rubidium was discovered spectroscopically in 1861 by Robert Bunsen and Gustav Kirchhoff, who observed two distinctive red spectral lines — giving it the name from Latin "rubidus" (deep red). It reacts violently enough with water to ignite the produced hydrogen gas. Rubidium atomic clocks exploit the precisely defined microwave frequency of the rubidium-87 hyperfine transition (6.8 GHz) to keep time with accuracy to within a microsecond per day — widely used in GPS satellites, telecommunication base stations, and navigation systems. Rubidium-82 (produced from strontium-82) is used in PET cardiac imaging to assess heart perfusion.'],
+  [38,'Sr','Strontium',87.62,'alkaline',2,5,'Solid',1790,'Strontium burns with a brilliant crimson-red flame, giving fireworks and emergency road flares their characteristic red color. It was named after Strontian, a village in Scotland where its mineral was first discovered. The radioactive isotope strontium-90, produced in nuclear weapons tests and reactor accidents, is particularly insidious — it mimics calcium and deposits in bone and teeth, where its 28.8-year half-life means it irradiates bone marrow for decades, causing leukemia and bone cancer. Atmospheric nuclear testing led to elevated Sr-90 in the milk and bones of children born in the 1950s and 60s, contributing to the nuclear test ban treaties.'],
+  [39,'Y','Yttrium',88.906,'transition-metal',3,5,'Solid',1794,'Yttrium is one of four elements named after the Swedish village of Ytterby (alongside terbium, erbium, and ytterbium), where a complex mineral was found to contain multiple new elements. Red phosphors in old CRT televisions and the red component of modern LED displays use yttrium oxide–europium complexes. Yttrium-aluminum garnet (YAG) crystals doped with neodymium produce the Nd:YAG laser — one of the most widely used industrial and medical lasers, used in eye surgery, tattoo removal, metal cutting, and range finding. Yttrium is also used in high-temperature superconductors (YBCO — yttrium barium copper oxide).'],
+  [40,'Zr','Zirconium',91.224,'transition-metal',4,5,'Solid',1789,'Zirconium\'s most critical property for nuclear technology is its extremely low neutron absorption cross-section — it allows neutrons to pass through with minimal capture, making it ideal for nuclear reactor fuel rod cladding without degrading the neutron economy. Zirconium\'s corrosion resistance is exceptional because a self-healing ZrO₂ oxide layer forms instantly on any scratch. Cubic zirconia (ZrO₂ stabilized in the cubic form) is the most common diamond simulant in jewelry. Zirconium dioxide is used in high-performance ceramic knife blades and dental crowns. Nearly all zirconium ores contain hafnium impurities that must be separated for nuclear applications.'],
+  [41,'Nb','Niobium',92.906,'transition-metal',5,5,'Solid',1801,'Niobium was independently named "columbium" in the USA and "niobium" in Europe for over a century before IUPAC standardized "niobium" in 1949. Most of the world\'s niobium comes from a single deposit in Brazil (Araxá). Its primary use is hardening high-strength low-alloy (HSLA) steel — just 0.05% niobium dramatically increases yield strength, enabling thinner, lighter steel for pipelines, car bodies, and shipbuilding. Superconducting niobium-titanium alloys are used in the electromagnets of MRI machines and the Large Hadron Collider at CERN. Niobium also shows promise for next-generation lithium-ion battery anodes with faster charging times.'],
+  [42,'Mo','Molybdenum',95.96,'transition-metal',6,5,'Solid',1781,'Molybdenum (symbol Mo from the Greek "molybdos," lead, due to confusion with galena) has the third-highest melting point of any element at 2,623°C. Molybdenum disulfide (MoS₂) is one of the most effective solid lubricants known, used in spacecraft mechanisms, gun barrels, and two-stroke engine oil — it works even in vacuum where conventional lubricants fail. Molybdenum steel alloys are used in armor plate, aircraft components, and high-speed drill bits. The enzyme nitrogenase — used by bacteria to fix atmospheric nitrogen — contains an iron-molybdenum cofactor (FeMoco) at its active site, making molybdenum essential for the natural nitrogen cycle.'],
+  [43,'Tc','Technetium',98,'transition-metal',7,5,'Synthetic',1937,'Technetium was the first element to be artificially produced — its name comes from the Greek "technetos" meaning artificial. Emilio Segrè and Carlo Perrier discovered it in 1937 in a piece of molybdenum that had been bombarded with deuterons in a cyclotron. All technetium isotopes are radioactive; none are stable. Yet the metastable isotope Tc-99m (6-hour half-life) is the most important radioisotope in nuclear medicine — it is used in over 40 million diagnostic scans per year worldwide for imaging cancer, heart disease, bone infections, and kidney function. It is produced from Mo-99 in nuclear reactors using the SHINE process.'],
+  [44,'Ru','Ruthenium',101.07,'transition-metal',8,5,'Solid',1844,'Ruthenium is the rarest of the platinum group metals and was the last of them to be discovered, by Karl Klaus in 1844, who named it after his homeland Ruthenia (Russia/Ukraine). Ruthenium is an unusually hard metal for a platinum-group element. Ruthenium(II) bipyridyl complex [Ru(bpy)₃]²⁺ is the archetypal photosensitizer for solar cells and photocatalysis research — it absorbs visible light and can split water for hydrogen production. Ruthenium dioxide (RuO₂) is used as an electrode catalyst in industrial chlorine production (chlor-alkali process). A 4 nm ruthenium layer has been developed by IMEC for semiconductor interconnects at below 2 nm node size.'],
+  [45,'Rh','Rhodium',102.906,'transition-metal',9,5,'Solid',1803,'Rhodium is consistently among the most expensive elements on Earth — it reached $29,800 per troy ounce in 2021, making it over 15 times the price of gold. Named after the Greek "rhodon" (rose) for its rose-colored salts. Its primary and most critical use is in the three-way catalytic converter in petrol vehicles, where rhodium specifically reduces nitrogen oxide emissions (NOx → N₂ + O₂) — without rhodium, modern vehicles could not meet emissions standards. Rhodium plating is used on white gold and silver jewelry to prevent tarnishing. South Africa supplies about 80% of the world\'s rhodium as a byproduct of platinum mining.'],
+  [46,'Pd','Palladium',106.42,'transition-metal',10,5,'Solid',1803,'Palladium was discovered by William Hyde Wollaston in 1803 and controversially announced anonymously before publication — a scandal in the scientific community. It was named after the asteroid Pallas, discovered the same year. Palladium\'s unique property of absorbing up to 900 times its own volume of hydrogen gas makes it central to hydrogen purification membranes. Along with platinum and rhodium, palladium is essential in gasoline and diesel catalytic converters (oxidizing CO and hydrocarbons). Palladium chloride was the first effective homogeneous catalyst in the Wacker process. Its price exceeded gold in 2019 due to tightening vehicle emissions regulations.'],
+  [47,'Ag','Silver',107.868,'transition-metal',11,5,'Solid','Ancient','Silver has the highest electrical conductivity and highest thermal conductivity of any element — both higher than copper — but its cost means copper is used for most electrical wiring. Silver\'s germicidal properties (the oligodynamic effect) have been known for millennia: Cyrus the Great reportedly stored water in silver containers to prevent contamination. Silver halide (AgBr, AgCl, AgI) crystals are sensitive to light and formed the basis of photographic film for 150 years. Silver nanoparticles are used in wound dressings, antimicrobial coatings, and medical devices. The Ag symbol comes from the Latin "argentum"; Argentina is literally named after silver, found abundantly there by Spanish colonizers.'],
+  [48,'Cd','Cadmium',112.414,'transition-metal',12,5,'Solid',1817,'Cadmium is a soft, toxic heavy metal that accumulates in the kidneys and liver and mimics zinc and calcium in biological systems. The Itai-itai ("ouch-ouch") disease in 1950s Japan was caused by cadmium contamination of rice paddies from mining runoff, causing agonizing bone fractures and kidney failure — the first recognized case of mass cadmium poisoning. Despite its toxicity, cadmium sulfide (CdS) is an excellent yellow pigment (Cadmium Yellow) used by artists since 1840, including Monet and van Gogh. Cadmium telluride (CdTe) thin-film solar panels are highly efficient and cost-effective. Nickel-cadmium (NiCd) rechargeable batteries are still used in power tools and emergency lighting.'],
+  [49,'In','Indium',114.818,'post-transition',13,5,'Solid',1863,'Indium was discovered spectroscopically in 1863 by Ferdinand Reich and Hieronymus Theodor Richter, named for its striking indigo spectral line. It makes a high-pitched "cry" (crackling/squeaking sound) when bent. Indium tin oxide (ITO) is a transparent, electrically conductive film that is genuinely irreplaceable for the touchscreens of every smartphone, tablet, and laptop, as well as LCD display electrodes and organic LED (OLED) screens. There is growing concern that indium supply may become a limiting factor for display manufacturing. Indium is also used in low-melting-point alloys for fire sprinkler systems and as a III-V semiconductor dopant.'],
+  [50,'Sn','Tin',118.710,'post-transition',14,5,'Solid','Ancient','Tin has been vital to human civilization for over 5,000 years — alloyed with copper to produce bronze, it defined the Bronze Age. The "tin cry" (a crackling sound) occurs when a bar of pure tin is bent, due to the breaking of tin crystals. Below 13.2°C, metallic white tin spontaneously transforms into powdery grey "tin pest" — a problem that reportedly contributed to failures of Napoleon\'s army in the Russian winter (tin buttons disintegrating). Modern tin is used primarily in solder (tin-silver-copper alloys) for electronics assembly, tin-plating of steel food cans (tin cans), and as an alloying element in superconductors and specialized bronzes.'],
+  [51,'Sb','Antimony',121.760,'metalloid',15,5,'Solid','Ancient','Antimony sulfide (stibnite) was used as kohl eye makeup in ancient Egypt and the Middle East for at least 3,500 years — both cosmetically and possibly as a protection against eye infections. Medieval alchemists used antimony compounds extensively, and Paracelsus wrote an entire treatise, "Triumphal Chariot of Antimony," about it. Today, antimony trioxide is the most important flame retardant additive in plastics and textiles — used in electronics, car upholstery, and children\'s toys. Antimony strengthens lead in car batteries and type metal for printing. Antimony telluride is a promising thermoelectric material for waste heat recovery.'],
+  [52,'Te','Tellurium',127.60,'metalloid',16,5,'Solid',1782,'Tellurium is one of the rarest stable elements in Earth\'s crust — scarcer than platinum — yet crucial for emerging technologies. It was discovered by Franz-Joseph Müller von Reichenstein in 1782 in gold ore from Transylvania. Organic tellurium compounds impart a persistent garlic odor to anyone who ingests even microgram amounts — "tellurium breath" is nearly impossible to eliminate for days. Cadmium telluride (CdTe) solar panels are among the most cost-effective photovoltaic technology, used by First Solar in utility-scale power plants. Tellurium is also used in phase-change memory (in Blu-ray discs and non-volatile RAM), bismuth telluride thermoelectric generators, and as a catalyst in rubber production.'],
+  [53,'I','Iodine',126.904,'halogen',17,5,'Solid',1811,'Iodine was discovered in 1811 by Bernard Courtois while processing seaweed ash to extract saltpeter for gunpowder — he noticed a violet vapor rising from his mixture, which condensed to form dark crystals. The thyroid gland concentrates iodine to produce the hormones thyroxine (T4) and triiodothyronine (T3), which regulate metabolism, growth, and development. Iodine deficiency is the world\'s leading preventable cause of intellectual disability — adding iodine to table salt (iodization) has been one of the most successful public health interventions in history. Povidone-iodine (Betadine) is a broad-spectrum antiseptic. Iodine-131 (8-day half-life) is used both to treat thyroid cancer and as a radioactive tracer.'],
+  [54,'Xe','Xenon',131.293,'noble-gas',18,5,'Gas',1898,'Xenon produces a brilliant blue-white glow in high-pressure arc lamps used in cinema projectors, airport runway lighting, and the xenon flash tubes of strobe lights and camera flashes. Xenon ion thrusters are used for spacecraft propulsion (Dawn, Hayabusa2, BepiColombo) — xenon atoms are ionized and accelerated to extremely high velocities, providing efficient thrust in vacuum. Xenon-133 and xenon-127 are used in nuclear medicine for lung ventilation imaging. Xenon at high pressure acts as a general anesthetic — it is cardioprotective and neuroprotective but too expensive for routine clinical use. Despite being "noble," xenon forms real compounds: XeF₂, XeF₄, XeO₃ — overturning the belief that noble gases were completely inert.'],
+  [55,'Cs','Caesium',132.905,'alkali',1,6,'Solid',1860,'Caesium is the most reactive and electropositive of all stable, non-radioactive elements. Dropped in water, it reacts so violently it can explode. Its most important property is the precisely defined microwave frequency of the caesium-133 hyperfine transition (9,192,631,770 Hz) — this is literally the definition of the SI second since 1967. Caesium atomic clocks are so precise they would lose or gain only one second every 300 million years. GPS, telecommunications, and financial transaction timestamps all ultimately depend on caesium-133 timing. Caesium formate (CsCOOH) brine is used as a drill fluid in oil and gas wells due to its extreme density.'],
+  [56,'Ba','Barium',137.327,'alkaline',2,6,'Solid',1808,'Barium was isolated by Humphry Davy in 1808 by electrolysis. Its name comes from the Greek "barys" (heavy) because its mineral (barite, BaSO₄) is unusually dense. Barium sulfate is completely insoluble in water and acids, making it safe to swallow — it is given as a "barium meal" (or barium enema) for gastrointestinal X-ray imaging, coating the digestive tract to make it visible. Other barium compounds are highly toxic. Barium chlorate and barium nitrate produce the brilliant green color in fireworks. Barium ferrite permanent magnets are used in loudspeakers and refrigerator door seals. Barite is used as a weighting agent in oil-well drilling mud.'],
+  [57,'La','Lanthanum',138.905,'lanthanide',3,6,'Solid',1839,'Lanthanum is the first member of the lanthanide series (f-block). Its name comes from Greek "lanthanein" meaning "to lie hidden," because it was so difficult to separate from other rare earths. Lanthanum nickel pentahydride (LaNi₅H₆) can absorb enormous quantities of hydrogen — used in hydrogen storage alloys in nickel-metal hydride (NiMH) batteries (as in Toyota Prius hybrids), where it stores hydrogen at 200 times the density of compressed gas. High-lanthanum glass lenses have unusually high refractive indices with low dispersion, essential for aspherical camera lenses and microscope objectives. Lanthanum compounds catalyze fluid catalytic cracking in petroleum refineries.'],
+  [58,'Ce','Cerium',140.116,'lanthanide',null,6,'Solid',1803,'Cerium is the most abundant of the rare earth elements (despite the name — many rare earths are more abundant than precious metals). Cerium oxide (CeO₂) is a remarkable polishing abite for glass, used on everything from smartphone screens to telescope mirrors to car windshields. It catalyzes self-cleaning oven reactions at lower temperatures. Cerium\'s unique property of switching between Ce³⁺ and Ce⁴⁺ oxidation states in response to oxygen partial pressure makes it the ideal oxygen storage material in three-way automotive catalytic converters — it stores excess oxygen during lean conditions and releases it during rich conditions, keeping the catalyst operating at peak efficiency.'],
+  [59,'Pr','Praseodymium',140.908,'lanthanide',null,6,'Solid',1885,'Praseodymium (from Greek "prasios" green and "didymos" twin) was separated from neodymium by Carl von Welsbach in 1885, who recognized they had different spectral absorption lines. Its salts have a distinctive light green color. Praseodymium is increasingly substituted for neodymium in permanent magnets, as the two elements co-occur and PrFeB has similar magnetic properties. Praseodymium-doped glass absorbs yellow-orange wavelengths, creating the shade "didymium glass" used in welding and glassblowing goggles to filter the intense sodium emission from hot glass. Pr₆O₁₁ is the yellow pigment in ceramic glazes.'],
+  [60,'Nd','Neodymium',144.242,'lanthanide',null,6,'Solid',1885,'Neodymium-iron-boron (Nd₂Fe₁₄B) permanent magnets, developed in 1984, are the strongest permanent magnets ever created — their energy product is approximately 10 times higher than older ferrite magnets. A neodymium magnet the size of a coin can lift objects weighing hundreds of times its own weight. These magnets are in every hard drive head actuator, EV motor (a Tesla Model S uses about 2 kg), wind turbine generator, loudspeaker, and headphone. Neodymium-doped glass lasers (Nd:glass) are used in inertial confinement fusion experiments at the National Ignition Facility. Neodymium glass has a striking blue-purple color, absorbing the yellow sodium D-line.'],
+  [61,'Pm','Promethium',145,'lanthanide',null,6,'Synthetic',1945,'Promethium was the last of the known stable elements to be discovered (1945, at Oak Ridge National Laboratory) and the only radioactive lanthanide with no stable isotopes. Named after Prometheus, who stole fire from the gods, reflecting the element\'s radioactive origin in nuclear reactors. Pm-147 (half-life 2.6 years) was used in luminous paint on watch dials as a safer replacement for radium. It powered early nuclear batteries (betavoltaic cells) in pacemakers and guided missile navigation systems in the 1960s–70s. Trace amounts of promethium exist in uranium ores from spontaneous fission, but at any given moment the entire Earth contains less than 600 grams of natural promethium.'],
+  [62,'Sm','Samarium',150.36,'lanthanide',null,6,'Solid',1879,'Samarium-cobalt (SmCo₅ and Sm₂Co₁₇) permanent magnets were the first rare-earth magnets, developed in the 1970s. While weaker than neodymium magnets, samarium-cobalt magnets are stable at temperatures up to 350°C and resistant to demagnetization, making them preferred for jet engine sensors, military equipment, and high-temperature motors where neodymium magnets would fail. Samarium-153 (EDTMP) is a radiopharmaceutical (Lexidronam) that concentrates in bone metastases and emits beta radiation to relieve pain in prostate and breast cancer patients. Samarium oxide is used as a catalyst and in infrared-absorbing glass.'],
+  [63,'Eu','Europium',151.964,'lanthanide',null,6,'Solid',1901,'Europium is the most reactive lanthanide (it oxidizes rapidly in air and reacts with cold water) and holds a unique photonic role in modern technology. Red phosphors in the first generation of color television sets used europium(III) activated yttrium vanadate and yttrium oxide — without europium, color TV could not produce saturated red. Euro banknotes contain europium-doped phosphors that fluoresce red under UV light as a security feature against counterfeiting. Blue phosphors in white LEDs and fluorescent lights use europium(II) activated strontium aluminate. Europium-labeled antibodies are used in time-resolved fluorescence immunoassays for clinical diagnostics with extremely low detection limits.'],
+  [64,'Gd','Gadolinium',157.25,'lanthanide',null,6,'Solid',1880,'Gadolinium is unique among the lanthanides in being ferromagnetic at near room temperature — its Curie point is just 20°C, so it loses its ferromagnetism on a warm day. Its most important application is as an MRI contrast agent: gadolinium-based agents (GBCAs like gadopentetate dimeglumine) are injected intravenously in about 30% of all MRI scans. Gd³⁺ ions with 7 unpaired electrons generate a powerful local magnetic field that shortens proton relaxation times in tissues, dramatically enhancing soft tissue contrast. However, gadolinium retention in brain tissue (even with stable complexes) has prompted regulatory review. Gadolinium also has the highest thermal neutron absorption cross section of any element, used in emergency reactor shutdown systems.'],
+  [65,'Tb','Terbium',158.925,'lanthanide',null,6,'Solid',1843,'Terbium was discovered by Carl Gustaf Mosander in 1843 from yttria (another Ytterby element). Green phosphors in fluorescent lamps and tri-color LED white lighting use Tb³⁺ luminescence in cerium-doped aluminate hosts — terbium activates the green component that makes "warm white" energy-efficient lighting possible. Terfenol-D (TbₓDy₁₋ₓFe₂), discovered in the 1970s, has the largest magnetostriction of any known material at room temperature — it changes length by up to 1,000 ppm in a magnetic field. Applications include sonar transducers in naval submarines, precision actuators in aerospace, and vibration cancellation systems in automobile engines.'],
+  [66,'Dy','Dysprosium',162.500,'lanthanide',null,6,'Solid',1886,'Dysprosium (from Greek "dysprositos," hard to get at) was separated from holmium in 1886. It has the highest magnetic susceptibility of any element at room temperature. Critical for the clean energy transition: dysprosium added to neodymium-iron-boron magnets (typically 1–12%) raises the Curie temperature from ~312°C to over 400°C, preventing demagnetization in the heat of EV motor operation and wind turbine generators. A single 3-MW wind turbine generator may contain ~800 kg of NdFeB magnets with significant dysprosium. China controls ~99% of dysprosium supply, creating geopolitical risks for clean energy supply chains. Dysprosium iodide is used in HID lighting.'],
+  [67,'Ho','Holmium',164.930,'lanthanide',null,6,'Solid',1878,'Holmium has the highest magnetic moment (10.6 Bohr magnetons) of any naturally occurring element, making holmium-doped iron garnets useful for ultra-strong magnetic flux concentrators and in magneto-optic data storage. Holmium-YAG (Ho:YAG) and holmium-YSGG lasers emit at 2.09–2.12 μm, a wavelength absorbed efficiently by water, making them ideal for minimally invasive surgery: Ho:YAG lasers are the gold standard for laser lithotripsy (kidney stone fragmentation) and treatment of benign prostatic hyperplasia. Holmium oxide solutions are used as calibration standards in spectrophotometers because of their sharp, well-defined absorption peaks.'],
+  [68,'Er','Erbium',167.259,'lanthanide',null,6,'Solid',1843,'Erbium\'s single most important application is underpinning the global internet. Erbium-doped fiber amplifiers (EDFAs) use the 1,530 nm emission of Er³⁺ ions pumped by a 980 nm laser diode to amplify optical signals in long-haul fiber optic cables without converting them to electrical signals — enabling transoceanic fiber optic networks like those carrying 95% of international internet traffic. Before EDFA technology (invented 1987), fiber cables required expensive, slow optical-to-electrical-to-optical conversion every 100 km. Erbium oxide imparts a distinctive pink or rose color to glass and is used in tinted sunglasses and decorative glass.'],
+  [69,'Tm','Thulium',168.934,'lanthanide',null,6,'Solid',1879,'Thulium is named after Thule — the classical name for the mythical far north of Scandinavia — and was one of the last rare earths discovered. Despite being labeled "rare," thulium is more abundant in Earth\'s crust than gold, silver, or platinum — but its deposits are diffuse. Thulium-170, produced by irradiating thulium-169 in nuclear reactors, emits gamma rays and has been used in portable X-ray units that work without electricity — useful in remote field medicine, where a small Tm-170 source replaces an X-ray tube. Thulium lasers (Tm:YAG, 2.01 μm) are emerging alternatives to erbium and holmium lasers in urology and soft tissue surgery.'],
+  [70,'Yb','Ytterbium',173.054,'lanthanide',null,6,'Solid',1878,'Ytterbium was the fourth element discovered in yttria from Ytterby minerals. Ytterbium fiber lasers (Yb³⁺ doped in silica fiber, ~1,070 nm) have become dominant in industrial material processing — cutting, welding, and marking metals, plastics, and glass with kilowatt-class power levels and excellent beam quality. Ytterbium lattice atomic clocks (using optical transitions rather than microwave) have achieved precision of 10⁻¹⁹ — they would neither gain nor lose a second in the age of the universe. These ultra-precise clocks can measure general relativistic time dilation due to centimeters of elevation difference, with applications in geodesy (measuring Earth\'s shape and gravity field).'],
+  [71,'Lu','Lutetium',174.967,'lanthanide',null,6,'Solid',1907,'Lutetium is the last and heaviest stable lanthanide, discovered in 1907 by Georges Urbain in Paris (Lutetia is the Latin name for Paris). Lutetium oxyorthosilicate (Lu₂SiO₅, LSO) scintillator crystals are the most important detection material in modern PET (positron emission tomography) scanners — they emit bright, fast light pulses when struck by 511 keV annihilation photons, enabling high-resolution 3D metabolic imaging for cancer staging. Lutetium-177 (DOTATATE, Lutathera) is a targeted radionuclide therapy approved for gastroenteropancreatic neuroendocrine tumors, delivering beta radiation directly to tumor cells via somatostatin receptor targeting.'],
+  [72,'Hf','Hafnium',178.49,'transition-metal',4,6,'Solid',1923,'Hafnium was the last stable element to be discovered (1923, by Coster and Hevesy using X-ray crystallography) because it is always found intimately mixed with zirconium in nature and is nearly impossible to separate by ordinary chemistry. In a landmark 2007 development, Intel replaced the silicon dioxide gate insulator in its 45nm CPU generation with hafnium dioxide (HfO₂), solving the quantum tunneling leakage problem that was threatening continued transistor miniaturization — hafnium enabled Moore\'s Law to continue for another decade. Hafnium\'s high thermal neutron cross section makes hafnium alloy an excellent material for nuclear reactor control rods.'],
+  [73,'Ta','Tantalum',180.948,'transition-metal',5,6,'Solid',1802,'Tantalum was named by Anders Ekeberg after Tantalus of Greek mythology — he was "tantalized" by the element\'s resistance to acids (it would not "absorb" any acid). The element is extraordinarily corrosion resistant, biocompatible, and has a high melting point (3,017°C). Tantalum capacitors, made from tantalum pentoxide, are used in virtually every mobile phone, laptop, and medical device because they offer high capacitance in tiny packages. This demand drove the "conflict mineral" crisis in the Democratic Republic of Congo, where tantalite (coltan) mining funded brutal armed groups, prompting supply chain transparency legislation. Tantalum is also used in surgical implants and chemical processing equipment.'],
+  [74,'W','Tungsten',183.84,'transition-metal',6,6,'Solid',1783,'Tungsten (from Swedish "tung sten," heavy stone; symbol W from "wolfram") has the highest melting point of any metal (3,422°C) and the highest tensile strength at temperatures above 1,650°C. These extreme properties made it the ideal filament material for the incandescent light bulb — used from Edison\'s era until the LED revolution. Tungsten carbide (WC), nearly as hard as diamond, is used in cutting tools, drill bits, mining machinery, and ballistic penetrators. "Tungsten fishing weights" are used instead of lead. Tungsten wires in X-ray tube anodes withstand the intense electron bombardment that generates X-rays. Tungsten\'s density (19.3 g/cm³) approaches gold.'],
+  [75,'Re','Rhenium',186.207,'transition-metal',7,6,'Solid',1925,'Rhenium was the last stable, non-radioactive element to be discovered (1925), found in columbite and platinum ores by Walter Noddack, Ida Tacke, and Otto Berg after being predicted by Mendeleev. It is the rarest stable element in Earth\'s crust. Rhenium\'s combination of the second-highest melting point (3,186°C) and extreme strength at high temperature makes it essential for single-crystal nickel-rhenium superalloy turbine blades in high-performance jet engines — each blade in a modern turbofan engine may contain 6% rhenium, operating beyond the melting point of most metals. Rhenium catalysts are used in petroleum reforming for high-octane gasoline production.'],
+  [76,'Os','Osmium',190.23,'transition-metal',8,6,'Solid',1803,'Osmium, discovered alongside iridium by Smithson Tennant in 1803, is the densest naturally occurring element at 22.59 g/cm³. A fist-sized cube would weigh over 41 kg. Its name comes from the Greek "osme" (smell) because osmium tetroxide (OsO₄), formed when osmium is exposed to air, is intensely pungent and highly toxic — it attacks the eyes and respiratory mucous membranes at extremely low concentrations. OsO₄ is used in electron microscopy to stain biological specimens (oxidizing unsaturated lipids). Osmium alloys (osmiridium) were used in fountain pen nibs, electrical contacts, and the tips of compass needles — applications requiring extreme hardness and wear resistance.'],
+  [77,'Ir','Iridium',192.217,'transition-metal',9,6,'Solid',1803,'Iridium is the most corrosion-resistant metal known and the second densest element. The worldwide 3 ppb iridium anomaly in clay layers at the Cretaceous-Paleogene boundary (65.5 million years ago) was the key evidence for the asteroid impact hypothesis that caused the mass extinction of non-avian dinosaurs. The international prototype kilogram — the physical artifact defining the kilogram for 130 years before 2019 — was a platinum-iridium alloy cylinder. Iridium spark plug electrodes last three times longer than platinum ones. Iridium crucibles are used to grow single crystals of gadolinium gallium garnet for laser technology and to synthesize high-temperature oxide crystals.'],
+  [78,'Pt','Platinum',195.084,'transition-metal',10,6,'Solid','Ancient','Platinum was used by pre-Columbian indigenous peoples of South America, who alloyed it with gold. Europeans initially dismissed it as "platina" (little silver) and an annoyance in gold mining. Platinum catalysts are essential in three of the most important industrial processes: catalytic oxidation of ammonia (Ostwald process, for nitric acid production), catalytic reforming of naphtha (making aviation fuel and chemicals), and automotive catalytic converters. Cisplatin (cis-diamminedichloroplatinum) — a platinum coordination compound discovered accidentally in 1965 — is one of the most effective chemotherapy drugs for testicular, ovarian, and bladder cancer, increasing testicular cancer cure rates from ~10% to over 90%.'],
+  [79,'Au','Gold',196.967,'transition-metal',11,6,'Solid','Ancient','Gold has captivated humanity for millennia. Its resistance to corrosion, brilliant luster, malleability, and rarity make it uniquely valuable. A single gram of gold can be beaten into a 1 m² sheet or drawn into 3 km of wire. Gold\'s exceptional electrical conductivity and corrosion resistance make it indispensable in high-reliability electronics — every smartphone and CPU contains gold contacts. Gold\'s chemical inertness arises from relativistic effects on its 6s electrons. Gold nanoparticles exhibit striking optical properties (deep red color) used in pregnancy and COVID-19 lateral flow tests, cancer photothermal therapy, and advanced diagnostics. All gold ever mined would fit in a 22 m cube.'],
+  [80,'Hg','Mercury',200.592,'transition-metal',12,6,'Liquid','Ancient','Mercury is the only metal that is liquid at room temperature and the only metal that remains liquid down to -38.8°C. Its name comes from the Roman messenger god; the symbol Hg from "hydrargyrum" (Greek: water-silver). Ancient Chinese and Indian medicine used mercury compounds — its toxicity was not understood. The Mad Hatter from Alice in Wonderland references the mental deterioration from mercury poisoning suffered by Victorian hatmakers who used mercury nitrate to felt hats. Mercury\'s high density, well-defined meniscus, and low vapor pressure made it the standard barometer and thermometer fluid for centuries. Artisanal gold mining using mercury amalgamation is the largest source of mercury pollution today.'],
+  [81,'Tl','Thallium',204.383,'post-transition',13,6,'Solid',1861,'Thallium was discovered by William Crookes in 1861 via spectroscopy, named for the Greek "thallos" (green shoot) for its bright green spectral line. Its extreme toxicity (fatal dose ~15 mg/kg) and tasteless, odorless, water-soluble nature made thallium sulfate a notorious murder weapon — it was dubbed the "poisoner\'s poison" and used in several famous murder cases before being banned. Agatha Christie featured thallium poisoning in her novel "The Pale Horse." Thallium-201 (73-hour half-life) is a radioactive tracer used in myocardial perfusion imaging (nuclear stress tests) to detect coronary artery disease. Thallium is also used in infrared optical components and specialty low-melting-point glasses.'],
+  [82,'Pb','Lead',207.2,'post-transition',14,6,'Solid','Ancient','Lead is one of the earliest metals smelted by humans, with evidence dating to 6500 BCE. Its symbol Pb comes from Latin "plumbum" (hence "plumber" — Roman plumbing used lead pipes). Lead\'s softness, low melting point, and corrosion resistance made it invaluable for pipes, coins, and pottery glazes. Tetraethyllead was added to gasoline from 1921 to improve engine performance — by the 1970s, leaded gasoline was depositing enough atmospheric lead to detectably raise blood lead levels in children globally. The phase-out of leaded gasoline is estimated to have increased IQ by an average of several points across entire generations. Lead-acid batteries still power nearly all conventional car starters. Lead radiation shielding protects hospital staff and patients.'],
+  [83,'Bi','Bismuth',208.980,'post-transition',15,6,'Solid',1753,'Bismuth forms spectacular staircase-like hopper crystals with a characteristic iridescent rainbow oxide tarnish — a favorite of mineral collectors. Technically, bismuth-209 is radioactive (decaying by alpha emission) but with a half-life of 1.9 × 10¹⁹ years — over a billion times the age of the universe — making it effectively stable. Bismuth subsalicylate (Pepto-Bismol) treats indigestion, diarrhea, and nausea by coating the stomach lining and acting as a mild antimicrobial. Bismuth\'s low toxicity, low melting point, and expansion on solidification make it an ideal lead substitute in low-melting alloys for fire sprinklers, and in lead-free solder and lead-free shot for hunting ammunition.'],
+  [84,'Po','Polonium',209,'metalloid',16,6,'Solid',1898,'Polonium was discovered by Marie and Pierre Curie in 1898 while processing tonnes of uranium ore — the first element discovered by chemical separation of radioactive decay products. Marie named it after her occupied homeland Poland, hoping to draw international attention to the Polish cause. Polonium-210 emits alpha particles so intensively that a microgram visibly glows blue in the dark from ionization of surrounding air. It is roughly 250,000 times more toxic than hydrogen cyanide by mass — the dose that kills 50% of exposed individuals is just 0.89 micrograms. Its assassination of former Russian spy Alexander Litvinenko in London in 2006 with Po-210 brought this element to global attention.'],
+  [85,'At','Astatine',210,'halogen',17,6,'Solid',1940,'Astatine is the rarest naturally occurring element on Earth — at any moment, the total terrestrial abundance is estimated at less than 30 grams. It was first synthesized in 1940 by Corson, MacKenzie, and Segrè by bombarding bismuth-209 with alpha particles. Its most stable naturally occurring isotope has a half-life of just 8.1 hours. Astatine-211 is the focus of intense cancer research — as a halogen, it readily forms covalent bonds with organic molecules and can be attached to tumor-targeting antibodies. Its alpha particle emission is extremely localized (mean free path ~70 μm in tissue), potentially enabling targeted alpha therapy (TAT) for cancers that do not respond to conventional treatment.'],
+  [86,'Rn','Radon',222,'noble-gas',18,6,'Gas',1900,'Radon is a colorless, odorless, radioactive noble gas that seeps continuously from uranium-bearing rock and soil worldwide. Being eight times denser than air, it accumulates in basements and lower floors of buildings in regions with uranium-rich geology (granite areas like Scandinavia, Cornwall, and parts of the US). Radon is the second leading cause of lung cancer globally, responsible for approximately 21,000 deaths per year in the US alone — more than drunk driving, but less than smoking. Radon testing is recommended for homes in high-risk areas; mitigation uses sub-slab ventilation to draw radon out before it enters. Radon was historically used in some cancer radiotherapy treatments before safer alternatives were developed.'],
+  [87,'Fr','Francium',223,'alkali',1,7,'Solid',1939,'Francium is the second rarest naturally occurring element (after astatine) and was the last element to be discovered by natural means rather than synthesis (1939, by Marguerite Perey at the Curie Institute in Paris — she was the first woman elected to the French Academy of Sciences). Named after France. At any moment, the total amount of francium in Earth\'s crust is estimated at less than 30 grams, existing only as fleeting daughter products in uranium and actinium decay chains. Its longest-lived isotope has a half-life of just 22 minutes. Francium is predicted to be the most reactive of all alkali metals and the most electropositive of all elements, but no macroscopic sample has ever been observed.'],
+  [88,'Ra','Radium',226,'alkaline',2,7,'Solid',1898,'Radium was discovered by Marie and Pierre Curie in 1898 after processing literally tonnes of pitchblende ore — they isolated one decigram of radium chloride from a ton of ore. Marie Curie died of aplastic anemia in 1934, almost certainly caused by her decades of radiation exposure. Radium\'s luminescent properties led to widespread use in self-luminous watch dials, instrument panels, and gun sights — the "Radium Girls" factory workers who painted watch dials were instructed to lick their brushes to a fine point, ingesting radium and developing catastrophic radiation-induced cancers, leading to landmark occupational safety legislation. Today radium-223 dichloride (Xofigo) is an approved treatment for bone metastases in prostate cancer.'],
+  [89,'Ac','Actinium',227,'actinide',3,7,'Solid',1899,'Actinium was discovered in 1899 by André-Louis Debierne, a colleague of the Curies, as a radioactive contaminant in uranium ore. It was the first member of what would be called the actinide series. Actinium glows a pale blue in the dark from the intense ionization of surrounding air by its alpha and beta radiation. Actinium-225 has attracted enormous interest as a targeted alpha therapy agent for cancer — its decay chain produces four alpha particles, and Ac-225-labeled antibodies (Actinium PSMA-617) have shown remarkable efficacy in trials for metastatic castration-resistant prostate cancer, with multiple clinical trials ongoing. The limited supply of Ac-225 (produced in only a few reactors worldwide) is a major constraint.'],
+  [90,'Th','Thorium',232.038,'actinide',null,7,'Solid',1828,'Thorium, named after Thor the Norse god of thunder, is approximately three times more abundant in Earth\'s crust than uranium and decays much more slowly (half-life 14.05 billion years — comparable to the age of the universe). Thorium-232 is fertile but not fissile — it must absorb a neutron to become fissile uranium-233. A thorium fuel cycle offers significant advantages: produces far less long-lived transuranic waste than the uranium cycle, is difficult to weaponize (U-233 is always contaminated with U-232), and India — which has enormous thorium deposits — has committed to developing thorium reactors. Gas mantle lanterns historically used thorium dioxide for their incandescent glow.'],
+  [91,'Pa','Protactinium',231.036,'actinide',null,7,'Solid',1917,'Protactinium was the last naturally occurring element to be discovered and isolated, predicted by Mendeleev as "eka-tantalum." Lise Meitner and Otto Hahn, and independently Frederick Soddy and John Cranston, discovered it in 1917. Its name means "parent of actinium" — Pa-231 decays to actinium-227. Protactinium-231 has a half-life of 32,760 years and its ratio to thorium-230 in ocean sediments is used to reconstruct past ocean circulation patterns, providing crucial data about ancient climate change. The entire world stock of isolated protactinium metal — a few hundred grams — was produced by the United Kingdom Atomic Energy Authority in the 1960s by processing 60 tonnes of uranium ore residues.'],
+  [92,'U','Uranium',238.029,'actinide',null,7,'Solid',1789,'Uranium is the heaviest naturally occurring element and the primary fuel of nuclear power. Discovered in 1789, its radioactivity was identified by Becquerel in 1896, leading to the discovery of radioactivity itself. The 1938 discovery of fission — one kilogram of U-235 contains the energy equivalent of 3,000 tonnes of coal — transformed energy and warfare. Enrichment increases the fissile U-235 fraction from 0.7% to 3–5% for reactor fuel or >90% for weapons. One uranium fuel pellet (7 grams) produces as much electricity as 480 m³ of natural gas, 120 liters of oil, or 1,780 lbs of coal — with zero carbon emissions during operation. Uranium-238 decay chains produced much of Earth\'s internal heat.'],
+  [93,'Np','Neptunium',237,'actinide',null,7,'Synthetic',1940,'Neptunium was the first transuranic element synthesized (1940, Edwin McMillan and Philip Abelson at Berkeley), named after Neptune, the next planet beyond Uranus (uranium). It is produced continuously in nuclear reactors when U-238 absorbs a neutron without fissioning. Neptunium-237 has a half-life of 2.14 million years, making it the longest-lived transuranic in spent nuclear fuel after plutonium-239 — a significant challenge for nuclear waste management. Neptunium-237 can sustain a fission chain reaction (it is fissile under fast neutron conditions), raising proliferation concerns, though it has never been used in a weapon. It can be transmuted in advanced reactors to shorter-lived isotopes.'],
+  [94,'Pu','Plutonium',244,'actinide',null,7,'Synthetic',1940,'Plutonium is the most important transuranic element. Pu-239, produced from U-238 by neutron capture, is fissile and used in nuclear weapons and as fuel in nuclear reactors. The first artificial nuclear explosion (Trinity, July 1945) and the Nagasaki bomb (Fat Man) both used plutonium implosion designs. Plutonium-238, produced in reactors from neptunium-237, generates steady heat from radioactive decay and has powered NASA\'s deep space missions for 50 years — the radioisotope thermoelectric generators (RTGs) on Voyager 1 and 2, New Horizons, and Cassini. Plutonium is the only element where the liquid phase is less dense than the solid. Its complex metallurgy (six allotropic phases at atmospheric pressure) makes it one of the most challenging materials to work with.'],
+  [95,'Am','Americium',243,'actinide',null,7,'Synthetic',1944,'Americium was synthesized in 1944 by Seaborg, James, Morgan, and Ghiorso at the University of Chicago as part of the Manhattan Project, named after the Americas. It is the only synthetic element with a common consumer application: americium-241 (the most stable isotope, half-life 432 years) is used in ionization-type smoke detectors in virtually every home. Alpha particles from the Am-241 source ionize air between two charged plates; smoke particles interrupt this ionization current, triggering the alarm. Each detector contains about 37,000 becquerels of Am-241 — enough to detect smoke reliably but presenting negligible radiation risk in normal use. Am-241 is also used in oil well logging instruments.'],
+  [96,'Cm','Curium',247,'actinide',null,7,'Synthetic',1944,'Curium was synthesized in 1944 by Seaborg, James, and Ghiorso at Berkeley, named in honor of Pierre and Marie Curie. It glows red in the dark from its intense radioactivity. Alpha particle X-ray spectrometers (APXS) using curium-244 have analyzed the elemental composition of Martian rocks and soil on every Mars rover: Sojourner, Spirit, Opportunity, Curiosity, and Perseverance. By bombarding a rock surface with alpha particles and measuring the resulting X-ray fluorescence, the APXS can determine the composition of 30 elements in just 10 minutes. Curium is also used as a power source in radioisotope thermoelectric generators for deep space probes where solar panels are ineffective.'],
+  [97,'Bk','Berkelium',247,'actinide',null,7,'Synthetic',1949,'Berkelium was synthesized in 1949 by Glenn Seaborg, Stanley Thompson, and Albert Ghiorso at the Lawrence Berkeley National Laboratory, named after Berkeley, California. It was produced by bombarding americium-241 with alpha particles in a cyclotron. Only microgram quantities of Bk-249 have ever been produced — after 70 years of production, the total accumulated is just a few hundred micrograms. Bk-249 is critically important as a target material for synthesizing heavier elements: it was the target used to discover element 117 (tennessine) in 2010, requiring 22 milligrams — the largest Bk sample ever assembled, costing approximately $10 million to produce at Oak Ridge National Laboratory.'],
+  [98,'Cf','Californium',251,'actinide',null,7,'Synthetic',1950,'Californium was synthesized in 1950 by bombarding curium with alpha particles, named after California and the University of California. Californium-252 is one of the most powerful known neutron sources per unit mass — each microgram emits 2.3 million neutrons per second through spontaneous fission. Applications include: portable neutron sources to start nuclear reactors; neutron activation analysis for gold and silver ore assaying; detection of explosives and drugs at airports and border crossings; and targeted neutron therapy for treatment of brain tumors (glioblastoma) and cervical cancer that do not respond to other radiation. At approximately $27 million per gram, Cf-252 is among the most expensive materials ever produced.'],
+  [99,'Es','Einsteinium',252,'actinide',null,7,'Synthetic',1952,'Einsteinium was discovered in 1952 in the fallout of the first hydrogen bomb test (Ivy Mike, November 1952) when coral from the Enewetak Atoll was analyzed — U-238 had captured multiple neutrons in rapid succession during the thermonuclear explosion. Its discovery was classified until 1955. Named after Albert Einstein. For 65 years, only nanogram quantities had ever been isolated. In a landmark 2021 study, researchers at Lawrence Berkeley National Laboratory assembled a 233-nanogram sample of Es-254 — the largest ever isolated — allowing the first measurement of its bulk properties including its "ionic radius" (it is smaller than expected due to actinide contraction) and the synthesis of a new einsteinium compound.'],
+  [100,'Fm','Fermium',257,'actinide',null,7,'Synthetic',1952,'Fermium was also discovered in Ivy Mike thermonuclear bomb fallout in 1952, named after Enrico Fermi, the architect of the first artificial nuclear reactor (Chicago Pile-1, 1942). Fermium-257 (the longest-lived isotope, 100.5-day half-life) can be produced in milligram quantities in high-flux nuclear reactors. A critical property of fermium is that it marks the practical limit of neutron-capture element synthesis: fermium-258 fissions spontaneously rather than capturing another neutron, making it impossible to synthesize heavier elements by successive neutron capture in reactors. Beyond fermium, new elements can only be synthesized by heavy ion fusion in particle accelerators. No practical applications exist.'],
+  [101,'Md','Mendelevium',258,'actinide',null,7,'Synthetic',1955,'Mendelevium was the first element synthesized one atom at a time (1955, Ghiorso, Harvey, Choppin, Thompson, and Seaborg), named after Dmitri Mendeleev, creator of the periodic table. It was produced by bombarding einsteinium-253 with alpha particles in the Berkeley cyclotron — the first experiment required developing entirely new radiochemical separation techniques to handle the 17 atoms produced in the entire bombardment. Mendelevium-258 (half-life 51.5 days) is the most stable isotope. The Soviet-American priority dispute over naming rights during the Cold War was resolved diplomatically; the American team\'s name prevailed. No practical applications exist for mendelevium.'],
+  [102,'No','Nobelium',259,'actinide',null,7,'Synthetic',1966,'Nobelium is named after Alfred Nobel, the Swedish inventor of dynamite and founder of the Nobel Prizes, who stipulated in his will that his fortune fund prizes for those who "confer the greatest benefit to mankind." The element\'s discovery was contentious — a Swedish team at the Nobel Institute claimed discovery in 1957, but results were not reproducible. Soviet (Dubna) and American (Berkeley) teams independently confirmed synthesis in 1958–1966. The credit and name were disputed for decades before IUPAC awarded priority to the Dubna team while retaining nobelium as the name. Nobelium-259 has a half-life of 58 minutes. No practical applications.'],
+  [103,'Lr','Lawrencium',262,'actinide',null,7,'Synthetic',1961,'Lawrencium, named after Ernest O. Lawrence (inventor of the cyclotron, 1930), completes the actinide series. Its electron configuration is anomalous: theoretical calculations and a 2015 measurement show Lr has a valence electron configuration of [Rn]5f¹⁴7s²7p¹, not [Rn]5f¹⁴6d¹7s² as group position would predict — the 7p orbital is lower in energy than 6d due to relativistic effects. This makes lawrencium the heaviest known element with an anomalous ground-state electron configuration, an important test of relativistic quantum chemistry predictions. Lawrencium-266 has the longest half-life at approximately 11 hours. No practical applications.'],
+  [104,'Rf','Rutherfordium',267,'transition-metal',4,7,'Synthetic',1969,'Rutherfordium, named after Ernest Rutherford (who discovered the atomic nucleus and alpha and beta radiation), is the first transactinide element — the first beyond the actinides. Its chemistry, studied atom-by-atom in aqueous solution, shows it behaves as a group 4 element, similar to hafnium and zirconium, as predicted — confirming the periodic table extends beyond the actinides in the expected pattern. Relativistic effects become increasingly important for transactinides. The longest-lived isotope, Rf-267, has a half-life of approximately 1.3 hours. No practical applications exist. Competing Soviet and American claims in the 1960s led to a naming controversy resolved by IUPAC in 1997.'],
+  [105,'Db','Dubnium',268,'transition-metal',5,7,'Synthetic',1970,'Dubnium was named after Dubna, Russia (the location of JINR, the Joint Institute for Nuclear Research) after decades of bitter Cold War priority disputes between the Soviet Dubna team and the American Berkeley/Lawrence Livermore teams — the element was simultaneously called "hahnium" (USA) and "nielsbohrium" (USSR) for over 20 years before IUPAC ruled in 1997. Dubnium behaves as a group 5 element in chemical experiments, similar to tantalum and niobium. The longest-lived isotope is Db-268 (approximately 29 hours). Research on transactinide chemistry requires developing specialized techniques to handle single-atom experiments on timescales of seconds to minutes.'],
+  [106,'Sg','Seaborgium',271,'transition-metal',6,7,'Synthetic',1974,'Seaborgium is named after Glenn T. Seaborg, the nuclear chemist who co-discovered or co-synthesized 10 transuranic elements from plutonium to element 102. Seaborg was alive when the element was named after him in 1994 — the first time a confirmed element was named after a living person (the International Union of Pure and Applied Chemistry initially resisted this precedent). Chemical experiments show seaborgium behaves as a group 6 element, forming MO₂Cl₂ compounds analogous to tungsten and molybdenum. Seaborg won the Nobel Prize in Chemistry in 1951 for discoveries of transuranium elements and proposed the actinide concept that correctly predicted the electronic structure of heavy elements.'],
+  [107,'Bh','Bohrium',272,'transition-metal',7,7,'Synthetic',1981,'Bohrium is named after Niels Bohr, whose model of the atom (1913) and foundational contributions to quantum mechanics transformed physics. Synthesized in 1981 at GSI Darmstadt (Germany) by bombarding bismuth-209 with chromium-54 ions. Chemical experiments on bohrium (2000) in Switzerland produced BhO₃Cl, which behaves as expected for a group 7 element (analogous to rhenium and technetium) — confirming that relativistic effects do not distort the group 7 chemistry at this atomic number. The longest-lived isotope, Bh-270, has a half-life of approximately 61 seconds. GSI Darmstadt has been a leading site for superheavy element synthesis since the 1970s.'],
+  [108,'Hs','Hassium',277,'transition-metal',8,7,'Synthetic',1984,'Hassium is named after Hassia, the Latin name for the German state of Hesse, home to GSI Darmstadt where it was synthesized. In 2002, a team at Paul Scherrer Institute in Switzerland produced hassium oxide (HsO₄) — the first chemical study of an element produced only in atom-at-a-time quantities. HsO₄ is volatile (like OsO₄, its lighter group 8 homolog) and toxic, with similar chemical properties to osmium tetroxide, confirming that hassium follows periodic trends as expected. The longest-lived isotope, Hs-270, has a half-life of 3.6 hours. Hassium synthesis requires about 4 months of continuous irradiation to produce a few dozen atoms.'],
+  [109,'Mt','Meitnerium',278,'transition-metal',9,7,'Synthetic',1982,'Meitnerium is named in honor of Lise Meitner, the Austrian-Swedish physicist who (with Otto Frisch) provided the theoretical explanation of nuclear fission in 1938, correctly calculating the enormous energy released from uranium nucleus splitting. Despite her central role, Meitner was notoriously overlooked for the Nobel Prize, which was awarded solely to Otto Hahn in 1944 — considered one of the most egregious omissions in Nobel history. Element 109 was named for her in 1997, joining curium (named for both Curies) as elements honoring female scientists. No chemical studies have been possible due to the very short half-lives (~8 seconds for Mt-278) and tiny production rates.'],
+  [110,'Ds','Darmstadtium',281,'transition-metal',10,7,'Synthetic',1994,'Darmstadtium, named after Darmstadt, Germany, was synthesized by bombarding lead-208 with nickel-62 ions — a cold fusion reaction that produces superheavy nuclei with relatively low excitation energy. The discovery team detected just 3 atoms in several weeks of irradiation. The longest-lived isotope, Ds-281, has a half-life of approximately 12.7 seconds. Theoretical predictions suggest darmstadtium should be a noble metal like platinum (its group 10 homolog), with extreme relativistic effects on its outer electron shells potentially making its chemistry significantly different from platinum and palladium. No chemical experiments have been performed.'],
+  [111,'Rg','Roentgenium',282,'transition-metal',11,7,'Synthetic',1994,'Roentgenium is named after Wilhelm Röntgen, discoverer of X-rays in 1895 (for which he received the very first Nobel Prize in Physics in 1901). Roentgenium is predicted by relativistic calculations to be a noble metal with unusual chemistry — theoretical models suggest Rg⁻ (the anion) might be more stable than Au⁻ in terms of electron affinity due to extreme relativistic contraction of the 7s orbital. Only a few atoms have ever been detected. The longest-lived isotope, Rg-282, has a half-life of approximately 2 minutes. No chemical experiments have been performed and no practical applications exist.'],
+  [112,'Cn','Copernicium',285,'transition-metal',12,7,'Synthetic',1996,'Copernicium is named after Nicolaus Copernicus, who established the heliocentric model of the solar system. Synthesized in 1996 at GSI Darmstadt by bombarding lead-208 with zinc-70 ions. Relativistic effects are so extreme in copernicium that theoretical calculations suggest its ground-state electron configuration may make it more similar to a noble gas than a mercury-like metal — it may actually be a gas at room temperature, despite being a group 12 element (like mercury and zinc). Experiments at RIKEN in 2007 showed copernicium atoms interact weakly with gold surfaces, supporting the noble gas prediction. The half-life of Cn-285 is approximately 29 seconds.'],
+  [113,'Nh','Nihonium',286,'post-transition',13,7,'Synthetic',2004,'Nihonium is named after Japan ("Nihon" in Japanese), being the first element discovered in Asia. The RIKEN Nishina Center team led by Kosuke Morita synthesized it over a remarkable 9-year experimental campaign (2004–2012), detecting just 3 confirmed events of element 113 in approximately 400 days of total beam time from bombarding bismuth-209 with zinc-70 ions. The team followed the element\'s decay chain through multiple daughter nuclei to confirm its identity. IUPAC formally confirmed nihonium in 2016. Nihonium is predicted to be the heaviest congener of thallium (group 13) but with highly modified properties due to relativistic effects. No practical applications exist.'],
+  [114,'Fl','Flerovium',289,'post-transition',14,7,'Synthetic',1999,'Flerovium, named after the Flerov Laboratory of Nuclear Reactions in Dubna (itself named after Soviet nuclear physicist Georgy Flyorov), was first synthesized in 1999 by bombarding plutonium-244 with calcium-48 ions — a hot fusion reaction. The calcium-48 beam, accelerated to one-tenth the speed of light, has enabled the synthesis of elements 114–118 at Dubna. Flerovium is predicted by relativistic calculations to behave more like a noble gas than a typical group 14 metal — its 7p₁/₂ orbital is so stabilized by relativistic effects that it forms an inert "pseudo-noble gas" configuration. Gas-phase chemistry experiments in 2009 showed flerovium atoms interact very weakly with gold surfaces, consistent with noble gas-like behavior.'],
+  [115,'Mc','Moscovium',290,'post-transition',15,7,'Synthetic',2003,'Moscovium is named after Moscow Oblast, home to JINR Dubna where it was synthesized. Produced by bombarding americium-243 with calcium-48 — the same Ca-48 hot fusion technique used for elements 114, 116, 117, and 118. The first synthesis in 2003 produced 4 atoms. Moscovium decays by alpha emission to nihonium-287, providing indirect access to study the nihonium decay chain. IUPAC confirmed the discovery in 2016, with the names moscovium and tennessine honoring the Russian and American institutions that collaborated on the synthesis of elements 115–118. Properties are entirely theoretical; the half-life of Mc-290 is approximately 650 milliseconds.'],
+  [116,'Lv','Livermorium',293,'post-transition',16,7,'Synthetic',2000,'Livermorium is named after Lawrence Livermore National Laboratory in California, which collaborated with JINR Dubna to synthesize it in 2000 using the calcium-48 bombardment of curium-248 targets. The element is named to honor Livermore\'s decades of contributions to nuclear research. Livermorium (group 16, like oxygen, sulfur, selenium, and tellurium) is predicted to be a metal due to relativistic effects that dramatically stabilize the 7s electrons. Theoretical calculations suggest the most stable oxidation state is Lv²⁺. All isotopes are highly radioactive with very short half-lives (Lv-293: ~61 ms). No chemical experiments have been feasible.'],
+  [117,'Ts','Tennessine',294,'halogen',17,7,'Synthetic',2010,'Tennessine is named after Tennessee, home to Oak Ridge National Laboratory, Vanderbilt University, and the University of Tennessee — all instrumental in its synthesis. Tennessine required berkelium-249 target material (extremely rare and produced only at Oak Ridge), which must be synthesized, shipped to Russia, purified, prepared into a target, and used in a time-sensitive experiment (Bk-249 half-life is 330 days). Only a few atoms of tennessine have been detected. Tennessine is expected to show significant departures from halogen chemistry due to relativistic effects — it may not readily form anions (like F, Cl, Br, I) and might instead prefer positive oxidation states, more resembling a noble metal than a halogen.'],
+  [118,'Og','Oganesson',294,'noble-gas',18,7,'Synthetic',2002,'Oganesson is named in honor of Yuri Oganessian, the pioneering nuclear physicist at JINR Dubna who developed the hot fusion techniques (Ca-48 bombardment) that enabled the discovery of elements 114–118 — he was named while living, only the second person after Seaborg to receive this honor. Oganesson completes period 7 and the p-block. Relativistic calculations suggest oganesson may not actually be a noble gas — its electrons are so affected by relativistic expansion that the HOMO-LUMO gap may be small, making it reactive, and it may be a solid at room temperature with a large polarizability. Only 5 atoms have ever been detected (Og-294, half-life ~0.89 ms). It marks the current experimental frontier of the periodic table.'],
+];
+
+const positions = {
+  1:[1,1], 2:[18,1],
+  3:[1,2], 4:[2,2], 5:[13,2], 6:[14,2], 7:[15,2], 8:[16,2], 9:[17,2], 10:[18,2],
+  11:[1,3], 12:[2,3], 13:[13,3], 14:[14,3], 15:[15,3], 16:[16,3], 17:[17,3], 18:[18,3],
+  19:[1,4], 20:[2,4], 21:[3,4], 22:[4,4], 23:[5,4], 24:[6,4], 25:[7,4], 26:[8,4], 27:[9,4], 28:[10,4], 29:[11,4], 30:[12,4], 31:[13,4], 32:[14,4], 33:[15,4], 34:[16,4], 35:[17,4], 36:[18,4],
+  37:[1,5], 38:[2,5], 39:[3,5], 40:[4,5], 41:[5,5], 42:[6,5], 43:[7,5], 44:[8,5], 45:[9,5], 46:[10,5], 47:[11,5], 48:[12,5], 49:[13,5], 50:[14,5], 51:[15,5], 52:[16,5], 53:[17,5], 54:[18,5],
+  55:[1,6], 56:[2,6], 72:[4,6], 73:[5,6], 74:[6,6], 75:[7,6], 76:[8,6], 77:[9,6], 78:[10,6], 79:[11,6], 80:[12,6], 81:[13,6], 82:[14,6], 83:[15,6], 84:[16,6], 85:[17,6], 86:[18,6],
+  87:[1,7], 88:[2,7], 104:[4,7], 105:[5,7], 106:[6,7], 107:[7,7], 108:[8,7], 109:[9,7], 110:[10,7], 111:[11,7], 112:[12,7], 113:[13,7], 114:[14,7], 115:[15,7], 116:[16,7], 117:[17,7], 118:[18,7],
+  57:[3,9], 58:[4,9], 59:[5,9], 60:[6,9], 61:[7,9], 62:[8,9], 63:[9,9], 64:[10,9], 65:[11,9], 66:[12,9], 67:[13,9], 68:[14,9], 69:[15,9], 70:[16,9], 71:[17,9],
+  89:[3,10], 90:[4,10], 91:[5,10], 92:[6,10], 93:[7,10], 94:[8,10], 95:[9,10], 96:[10,10], 97:[11,10], 98:[12,10], 99:[13,10], 100:[14,10], 101:[15,10], 102:[16,10], 103:[17,10]
+};
+
+const categoryColors = {
+  'alkali':'--alkali','alkaline':'--alkaline','transition-metal':'--transition',
+  'post-transition':'--posttrans','metalloid':'--metalloid','nonmetal':'--nonmetal',
+  'halogen':'--halogen','noble-gas':'--noble','lanthanide':'--lanthanide','actinide':'--actinide'
+};
+const categoryNames = {
+  'alkali':'Alkali Metal','alkaline':'Alkaline Earth Metal','transition-metal':'Transition Metal',
+  'post-transition':'Post-Transition Metal','metalloid':'Metalloid','nonmetal':'Nonmetal (Reactive)',
+  'halogen':'Halogen','noble-gas':'Noble Gas','lanthanide':'Lanthanide','actinide':'Actinide'
+};
+
+const table = document.getElementById('ptable');
+const modal = document.getElementById('modal');
+
+for(let row = 1; row <= 10; row++) {
+  for(let col = 1; col <= 18; col++) {
+    const el = elements.find(e => {
+      const pos = positions[e[0]];
+      return pos && pos[0] === col && pos[1] === row;
+    });
+    if(el) {
+      const div = document.createElement('div');
+      div.className = `element ${el[4]}`;
+      div.style.gridColumn = col;
+      div.style.gridRow = row;
+      div.dataset.num = el[0];
+      div.dataset.sym = el[1].toLowerCase();
+      div.dataset.name = el[2].toLowerCase();
+      div.dataset.cat = el[4];
+      div.innerHTML = `
+        <div class="el-num">${el[0]}</div>
+        <div class="el-sym">${el[1]}</div>
+        <div class="el-name">${el[2]}</div>
+        <div class="el-mass">${el[3]}</div>
+      `;
+      div.addEventListener('click', () => openModal(el));
+      table.appendChild(div);
+    } else {
+      if(row === 6 && col === 3) {
+        const div = document.createElement('div');
+        div.style.cssText = `grid-column:3;grid-row:6;display:flex;align-items:center;justify-content:center;`;
+        div.innerHTML = `<div style="font-size:0.45rem;color:var(--lanthanide);letter-spacing:0.05em;">57-71</div>`;
+        table.appendChild(div);
+      } else if(row === 7 && col === 3) {
+        const div = document.createElement('div');
+        div.style.cssText = `grid-column:3;grid-row:7;display:flex;align-items:center;justify-content:center;`;
+        div.innerHTML = `<div style="font-size:0.45rem;color:var(--actinide);letter-spacing:0.05em">89-103</div>`;
+        table.appendChild(div);
+      } else if(row === 8 && col >= 1 && col <= 18) {
+        const div = document.createElement('div');
+        div.style.cssText = `grid-column:${col};grid-row:8;height:12px;`;
+        table.appendChild(div);
+      }
+    }
+  }
+}
+document.querySelector('.periodic-table').style.gridTemplateRows = 'repeat(7, 58px) 12px repeat(2, 58px)';
+
+let currentEl = null;
+
+function openModal(el) {
+  currentEl = el;
+  const [num, sym, name, mass, cat, group, period, phase, disc, overview] = el;
+  const color = `var(${categoryColors[cat]})`;
+  const colorVal = getComputedStyle(document.documentElement).getPropertyValue(categoryColors[cat].replace('var(','').replace(')',''));
+
+  document.getElementById('mNum').textContent = num;
+  document.getElementById('mSym').textContent = sym;
+  document.getElementById('mSym').style.color = color;
+  document.getElementById('mMassSm').textContent = mass;
+  document.getElementById('mSymBlock').style.color = color;
+  document.getElementById('mSymBlock').style.borderColor = color;
+  document.getElementById('mName').textContent = name;
+  document.getElementById('mName').style.color = color;
+  document.getElementById('mCat').textContent = categoryNames[cat] || cat;
+  document.querySelector('.modal-top').style.background =
+    `radial-gradient(ellipse at top left, ${colorVal}22 0%, transparent 65%)`;
+
+  document.getElementById('mStats').innerHTML = `
+    <div class="stat"><div class="stat-label">Atomic Mass</div><div class="stat-value">${mass} u</div></div>
+    <div class="stat"><div class="stat-label">Period / Group</div><div class="stat-value">${period} / ${group || 'f-block'}</div></div>
+    <div class="stat"><div class="stat-label">Phase (STP)</div><div class="stat-value">${phase}</div></div>
+    <div class="stat"><div class="stat-label">Discovered</div><div class="stat-value">${disc}</div></div>
+  `;
+
+  // Overview tab
+  const data = getDeepData(num, name, sym, mass, cat, group, period, phase, disc);
+  document.getElementById('mDesc').textContent = data.overview || overview;
+
+  // Deep Dive tab
+  const d = data.deep;
+  document.getElementById('mDeepDive').innerHTML = `
+    <div class="deep-section">
+      <div class="deep-section-title">History & Discovery</div>
+      <div class="deep-text">${d.history}</div>
+    </div>
+    <div class="deep-section">
+      <div class="deep-section-title">Chemistry</div>
+      <div class="deep-text">${d.chemistry}</div>
+    </div>
+    <div class="deep-section">
+      <div class="deep-section-title">Biology & Medicine</div>
+      <div class="deep-text">${d.biology}</div>
+    </div>
+    <div class="deep-section">
+      <div class="deep-section-title">⚡ Did You Know</div>
+      <div class="deep-text" style="font-style:italic;color:rgba(255,255,255,0.85)">${d.funFact}</div>
+    </div>
+    <div class="deep-section">
+      <div class="deep-section-title">Physical Properties</div>
+      <div class="deep-facts">
+        <div class="deep-fact"><div class="deep-fact-label">Melting Point</div><div class="deep-fact-value">${d.meltPoint}</div></div>
+        <div class="deep-fact"><div class="deep-fact-label">Boiling Point</div><div class="deep-fact-value">${d.boilPoint}</div></div>
+        <div class="deep-fact"><div class="deep-fact-label">Density</div><div class="deep-fact-value">${d.density}</div></div>
+        <div class="deep-fact"><div class="deep-fact-label">Electronegativity</div><div class="deep-fact-value">${d.electronegativity}</div></div>
+        <div class="deep-fact"><div class="deep-fact-label">Oxidation States</div><div class="deep-fact-value">${d.oxidationStates}</div></div>
+        <div class="deep-fact"><div class="deep-fact-label">Key Isotopes</div><div class="deep-fact-value">${d.isotopes}</div></div>
+      </div>
+    </div>
+  `;
+
+  // Uses tab
+  const uses = data.uses;
+  document.getElementById('mUses').innerHTML = uses.map(u => `
+    <div class="use-item">
+      <div class="use-icon">${u.icon}</div>
+      <div class="use-content">
+        <div class="use-title">${u.title}</div>
+        <div class="use-desc">${u.desc}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Reset to overview tab
+  switchTab('overview');
+  modal.classList.add('open');
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
+  document.querySelector('.modal-body').scrollTop = 0;
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+document.getElementById('modalClose').addEventListener('click', () => modal.classList.remove('open'));
+modal.addEventListener('click', (e) => { if(e.target === modal) modal.classList.remove('open'); });
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape' && !document.getElementById('scicilliansOverlay').style.display.includes('flex')) modal.classList.remove('open'); });
+
+// Search
+document.getElementById('search').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  document.querySelectorAll('.element').forEach(el => {
+    if(!q) { el.classList.remove('dimmed'); return; }
+    const match = el.dataset.num.includes(q) || el.dataset.sym.includes(q) || el.dataset.name.includes(q);
+    el.classList.toggle('dimmed', !match);
+  });
+});
+
+// Legend filter
+let activeFilter = null;
+document.querySelectorAll('.leg-item').forEach(item => {
+  item.addEventListener('click', function() {
+    const cat = this.dataset.cat;
+    if(activeFilter === cat) {
+      activeFilter = null;
+      document.querySelectorAll('.element').forEach(el => el.classList.remove('dimmed'));
+      this.style.opacity = '';
+      return;
+    }
+    activeFilter = cat;
+    document.querySelectorAll('.leg-item').forEach(l => l.style.opacity = '0.4');
+    this.style.opacity = '1';
+    document.querySelectorAll('.element').forEach(el => {
+      el.classList.toggle('dimmed', el.dataset.cat !== cat);
+    });
+  });
+});
+
+</script>
+
+
+<!-- ===== SCICILLIANS OVERLAY ===== -->
+<div id="scicilliansOverlay" style="display:none;position:fixed;inset:0;z-index:5000;background:#0d0d14;overflow:hidden;flex-direction:column;">
+
+<style>
+#scicilliansOverlay { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f0f0f0; }
+#scicilliansOverlay * { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* NAVBAR - NOT sticky, just normal flow at top */
+.sc-navbar {
+    background: #13131f;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 0 24px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    width: 100%;
+}
+.sc-logo {
+    font-size: 1.6rem; font-weight: 900;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    cursor: pointer; letter-spacing: -0.5px;
+}
+.sc-nav-right { display: flex; align-items: center; gap: 14px; }
+.sc-search-wrap {
+    display: flex; align-items: center; background: #1e1e2e;
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 50px;
+    padding: 8px 18px; gap: 10px; width: 240px;
+}
+.sc-search-wrap:focus-within { border-color: #3b82f6; }
+.sc-search-wrap input { background: none; border: none; outline: none; color: white; font-size: 0.9rem; width: 100%; }
+.sc-search-wrap input::placeholder { color: #666; }
+.sc-close-btn {
+    background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4);
+    color: #f87171; padding: 9px 18px; border-radius: 8px; font-size: 0.85rem;
+    font-weight: 600; cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.sc-close-btn:hover { background: rgba(239,68,68,0.4); }
+
+/* HERO */
+.sc-hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+    padding: 40px 24px; text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    position: relative; overflow: hidden; flex-shrink: 0;
+}
+.sc-hero::before {
+    content: ''; position: absolute; top: -50%; left: 50%; transform: translateX(-50%);
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 60%);
+    pointer-events: none;
+}
+.sc-hero h1 {
+    font-size: 2.8rem; font-weight: 900; position: relative;
+    background: linear-gradient(135deg, #fff 0%, #93c5fd 50%, #c4b5fd 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    margin-bottom: 10px;
+}
+.sc-hero p { color: #94a3b8; font-size: 1rem; margin-bottom: 20px; position: relative; }
+.sc-hero-stats { display: flex; justify-content: center; gap: 40px; position: relative; }
+.sc-hero-stat { text-align: center; }
+.sc-hero-stat-num { font-size: 1.8rem; font-weight: 800; color: #60a5fa; }
+.sc-hero-stat-lbl { font-size: 0.8rem; color: #64748b; }
+
+/* BODY = sidebar + content, fills remaining space */
+.sc-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden; /* children scroll independently */
+    min-height: 0;
+}
+
+/* SIDEBAR */
+.sc-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: #0d0d14;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    overflow-y: auto;
+    padding: 24px 12px;
+}
+.sc-sidebar-section { margin-bottom: 28px; }
+.sc-sidebar-title {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1.5px; color: #475569; margin-bottom: 10px; padding-left: 8px;
+}
+.sc-sidebar-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px; border-radius: 10px;
+    color: #94a3b8; font-size: 0.88rem; font-weight: 500;
+    transition: all 0.2s; cursor: pointer; text-decoration: none;
+    width: 100%;
+}
+.sc-sidebar-link:hover, .sc-sidebar-link.sc-active {
+    background: rgba(59,130,246,0.12); color: #60a5fa;
+}
+
+/* MAIN CONTENT AREA - this scrolls */
+.sc-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 24px;
+    min-width: 0;
+}
+
+/* FEATURED BANNER */
+.sc-featured {
+    background: linear-gradient(135deg, #1e3a8a 0%, #4c1d95 100%);
+    border-radius: 16px; padding: 28px; margin-bottom: 28px;
+    display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    border: 1px solid rgba(59,130,246,0.3); cursor: pointer; transition: all 0.3s;
+}
+.sc-featured:hover { transform: translateY(-3px); box-shadow: 0 15px 50px rgba(30,58,138,0.4); }
+.sc-featured h2 { font-size: 1.8rem; font-weight: 900; margin-bottom: 8px; }
+.sc-featured p { color: #93c5fd; font-size: 0.95rem; margin-bottom: 16px; }
+.sc-featured-play {
+    background: white; color: #1d4ed8; border: none; padding: 11px 26px;
+    border-radius: 50px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+}
+.sc-featured-play:hover { transform: scale(1.05); }
+.sc-featured-icon { font-size: 4rem; flex-shrink: 0; }
+
+.sc-section-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.sc-section-hdr h2 { font-size: 1.4rem; font-weight: 800; color: white; }
+
+/* GAMES GRID */
+.sc-games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 18px; margin-bottom: 40px;
+}
+.sc-card {
+    background: #13131f; border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.25s;
+}
+.sc-card:hover { transform: translateY(-5px); border-color: rgba(59,130,246,0.5); box-shadow: 0 12px 40px rgba(0,0,0,0.4); }
+.sc-thumb {
+    width: 100%; aspect-ratio: 16/9; display: flex;
+    align-items: center; justify-content: center; font-size: 3rem;
+    position: relative; overflow: hidden;
+}
+.sc-play-icon {
+    position: absolute; width: 48px; height: 48px;
+    background: rgba(37,99,235,0.9); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; opacity: 0; transition: opacity 0.2s; backdrop-filter: blur(4px);
+}
+.sc-card:hover .sc-play-icon { opacity: 1; }
+.sc-info { padding: 14px; }
+.sc-name {
+    font-size: 0.95rem; font-weight: 700; color: white; margin-bottom: 6px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sc-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.sc-tag {
+    background: rgba(59,130,246,0.15); color: #60a5fa;
+    padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600;
+}
+.sc-fav-btn {
+    background: none; border: none; font-size: 1.1rem; cursor: pointer;
+    padding: 2px 4px; border-radius: 6px; transition: transform 0.2s;
+    flex-shrink: 0; line-height: 1; color: #64748b;
+}
+.sc-fav-btn:hover { transform: scale(1.3); color: #fbbf24; }
+.sc-fav-btn.sc-fav-active { color: #fbbf24; filter: drop-shadow(0 0 4px #fbbf24); }
+
+.sc-no-results { text-align: center; color: #475569; padding: 60px 20px; font-size: 1.1rem; }
+
+/* GAME PLAYER MODAL — absolute inside overlay */
+.sc-game-modal {
+    display: none; position: absolute; inset: 0;
+    background: rgba(0,0,0,0.92); z-index: 200;
+    align-items: center; justify-content: center; backdrop-filter: blur(6px);
+}
+.sc-game-modal.open { display: flex; }
+.sc-modal-box {
+    width: 90vw; max-width: 1100px; background: #13131f;
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+    overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+}
+.sc-modal-hdr {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,0.07); background: #0d0d14;
+}
+.sc-modal-title { font-size: 1.3rem; font-weight: 700; color: white; }
+.sc-modal-actions { display: flex; gap: 10px; align-items: center; }
+.sc-fullscreen-btn {
+    background: rgba(59,130,246,0.2); border: 1px solid rgba(59,130,246,0.4);
+    color: #60a5fa; padding: 8px 16px; border-radius: 8px; font-size: 0.85rem;
+    font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.sc-fullscreen-btn:hover { background: rgba(59,130,246,0.35); }
+.sc-modal-close-btn {
+    background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.4);
+    color: #f87171; width: 36px; height: 36px; border-radius: 8px;
+    font-size: 1.2rem; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; transition: all 0.2s;
+}
+.sc-modal-close-btn:hover { background: rgba(239,68,68,0.35); }
+.sc-frame-wrap { width: 100%; aspect-ratio: 16/9; background: #000; position: relative; }
+.sc-frame-wrap iframe { width: 100%; height: 100%; border: none; display: none; }
+.sc-frame-loading {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; background: #0d0d14; gap: 16px;
+}
+.sc-spinner {
+    width: 50px; height: 50px;
+    border: 4px solid rgba(59,130,246,0.2); border-top: 4px solid #3b82f6;
+    border-radius: 50%; animation: sc-spin 1s linear infinite;
+}
+@keyframes sc-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 800px) {
+    .sc-sidebar { display: none; }
+    .sc-hero h1 { font-size: 2rem; }
+}
+</style>
+
+  <!-- Navbar -->
+  <nav class="sc-navbar">
+    <div class="sc-logo" onclick="scShowAll()">🎯 Scicillians</div>
+    <div class="sc-nav-right">
+      <div class="sc-search-wrap">
+        <span>🔍</span>
+        <input type="text" placeholder="Search games..." id="sc-search" oninput="scHandleSearch()">
+      </div>
+      <button class="sc-close-btn" onclick="closeScicillians()">✕ Close</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="sc-hero" id="sc-hero">
+    <h1>Scicillians Game Hub</h1>
+    <p>Your go-to destination for free online games. No downloads, no sign-ups.</p>
+    <div class="sc-hero-stats">
+      <div class="sc-hero-stat"><div class="sc-hero-stat-num">60+</div><div class="sc-hero-stat-lbl">Games Available</div></div>
+      <div class="sc-hero-stat"><div class="sc-hero-stat-num">10</div><div class="sc-hero-stat-lbl">Categories</div></div>
+      <div class="sc-hero-stat"><div class="sc-hero-stat-num">100%</div><div class="sc-hero-stat-lbl">Free to Play</div></div>
+    </div>
+  </div>
+
+  <!-- Body: sidebar + scrollable content -->
+  <div class="sc-body">
+
+    <!-- Sidebar -->
+    <aside class="sc-sidebar">
+      <div class="sc-sidebar-section">
+        <div class="sc-sidebar-title">Browse</div>
+        <div class="sc-sidebar-link sc-active" onclick="scSidebarFilter(this,'all')">🏠 Home</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'action')">⚔️ Action</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'racing')">🏎️ Racing</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'puzzle')">🧩 Puzzle</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'sports')">⚽ Sports</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'arcade')">👾 Arcade</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'strategy')">🏰 Strategy</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'multiplayer')">👥 Multiplayer</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'shooting')">🔫 Shooting</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'platformer')">🦘 Platformer</div>
+        <div class="sc-sidebar-link" onclick="scSidebarFilter(this,'favorites')">⭐ Favorites</div>
+      </div>
+    </aside>
+
+    <!-- Scrollable content -->
+    <div class="sc-content">
+
+      <!-- Featured banner -->
+      <div class="sc-featured" id="sc-featured" onclick="scOpenGame('tank-stars')">
+        <div>
+          <h2>🎯 Tank Stars</h2>
+          <p>Epic tank battles with physics-based destruction. Our #1 featured game!</p>
+          <button class="sc-featured-play">▶ Play Now</button>
+        </div>
+        <div class="sc-featured-icon">🎯</div>
+      </div>
+
+      <div class="sc-section-hdr">
+        <h2 id="sc-title">🔥 All Games</h2>
+      </div>
+      <div class="sc-games-grid" id="sc-grid"></div>
+      <div class="sc-no-results" id="sc-noresults" style="display:none;">No games found!</div>
+
+    </div>
+  </div>
+
+  <!-- Game modal (absolute inside overlay) -->
+  <div class="sc-game-modal" id="gameModal_sc">
+    <div class="sc-modal-box">
+      <div class="sc-modal-hdr">
+        <span class="sc-modal-title" id="sc-modal-title">Loading...</span>
+        <div class="sc-modal-actions">
+          <button class="sc-fullscreen-btn" onclick="scGoFullscreen()">⛶ Fullscreen</button>
+          <button class="sc-modal-close-btn" onclick="scCloseGame()">✕</button>
+        </div>
+      </div>
+      <div class="sc-frame-wrap">
+        <div class="sc-frame-loading" id="sc-loading">
+          <div class="sc-spinner"></div>
+          <p style="color:#64748b;">Loading game...</p>
+        </div>
+        <iframe id="gameFrame_sc" src="" allowfullscreen allow="autoplay; fullscreen"></iframe>
+      </div>
+    </div>
+  </div>
+
+</div>
+<!-- ===== END SCICILLIANS OVERLAY ===== -->
+
+<script>
+// ===== SCICILLIANS JS =====
+const sc_games = [
+    { id: 'tank-stars',        name: 'Tank Stars',           emoji: '🎯', color: '#1e3a8a', tags: ['action','shooting'],      url: 'https://kiz10.com/gamecode/tank-stars/' },
+    { id: 'krunker',           name: 'Krunker.io',           emoji: '🎯', color: '#dc2626', tags: ['shooting','multiplayer'],  url: 'https://krunker.io/' },
+    { id: 'shell-shockers',    name: 'Shell Shockers',       emoji: '🥚', color: '#ca8a04', tags: ['shooting','multiplayer'],  url: 'https://shellshock.io/' },
+    { id: 'venge-io',          name: 'Venge.io',             emoji: '⚔️', color: '#1e3a8a', tags: ['shooting','multiplayer'],  url: 'https://venge.io/' },
+    { id: 'zombs-royale',      name: 'Zombs Royale',         emoji: '👑', color: '#7c2d12', tags: ['shooting','multiplayer'],  url: 'https://zombsroyale.io/' },
+    { id: 'narrow-one',        name: 'Narrow One',           emoji: '🏹', color: '#1e3a8a', tags: ['shooting','multiplayer'],  url: 'https://narrow.one/' },
+    { id: 'diep-io',           name: 'Diep.io',              emoji: '💣', color: '#1e3a8a', tags: ['arcade','multiplayer'],    url: 'https://diep.io/' },
+    { id: 'paper-io',          name: 'Paper.io 2',           emoji: '📄', color: '#0369a1', tags: ['arcade','multiplayer'],    url: 'https://paper-io.com/' },
+    { id: 'smash-karts',       name: 'Smash Karts',          emoji: '🏎️', color: '#0f766e', tags: ['racing','multiplayer'],   url: 'https://smashkarts.io/' },
+    { id: 'lordz-io',          name: 'Lordz.io',             emoji: '👑', color: '#92400e', tags: ['strategy','multiplayer'],  url: 'https://lordz.io/' },
+    { id: 'moomoo-io',         name: 'Moomoo.io',            emoji: '🐄', color: '#ca8a04', tags: ['strategy','multiplayer'],  url: 'https://moomoo.io/' },
+    { id: 'taming-io',         name: 'Taming.io',            emoji: '🐾', color: '#15803d', tags: ['multiplayer','action'],    url: 'https://taming.io/' },
+    { id: 'splix-io',          name: 'Splix.io',             emoji: '📐', color: '#0369a1', tags: ['arcade','multiplayer'],    url: 'https://splix.io/' },
+    { id: 'wings-io',          name: 'Wings.io',             emoji: '✈️', color: '#0369a1', tags: ['multiplayer','action'],    url: 'https://wings.io/' },
+    { id: 'wormate-io',        name: 'Wormate.io',           emoji: '🐛', color: '#65a30d', tags: ['arcade','multiplayer'],    url: 'https://wormate.io/' },
+    { id: 'defly-io',          name: 'Defly.io',             emoji: '🚁', color: '#0369a1', tags: ['multiplayer','action'],    url: 'https://defly.io/' },
+    { id: 'starblast-io',      name: 'Starblast.io',         emoji: '🌟', color: '#1e3a8a', tags: ['shooting','multiplayer'],  url: 'https://starblast.io/' },
+    { id: 'bonk-io',           name: 'Bonk.io',              emoji: '⚽', color: '#7c3aed', tags: ['multiplayer','action'],    url: 'https://bonk.io/' },
+    { id: 'yohoho-io',         name: 'YoHoHo.io',            emoji: '🏴‍☠️', color: '#1e3a8a', tags: ['multiplayer','action'],    url: 'https://yohoho.io/' },
+    { id: 'brutal-io',         name: 'Brutal.io',            emoji: '⚡', color: '#dc2626', tags: ['arcade','multiplayer'],    url: 'https://brutal.io/' },
+    { id: 'worms-zone',        name: 'Worms Zone',           emoji: '🐛', color: '#65a30d', tags: ['arcade','multiplayer'],    url: 'https://wormszone.io/' },
+    { id: 'skribbl',           name: 'Skribbl.io',           emoji: '🎨', color: '#2563eb', tags: ['arcade','multiplayer'],    url: 'https://skribbl.io/' },
+    { id: 'minecraft',         name: 'Minecraft Classic',    emoji: '⛏️', color: '#4d7c0f', tags: ['strategy','multiplayer'],  url: 'https://classic.minecraft.net/' },
+    { id: 'cookie-clicker',    name: 'Cookie Clicker',       emoji: '🍪', color: '#b45309', tags: ['arcade'],                  url: 'https://orteil.dashnet.org/cookieclicker/' },
+    { id: 'gartic-phone',      name: 'Gartic Phone',         emoji: '📱', color: '#7c3aed', tags: ['arcade','multiplayer'],    url: 'https://garticphone.com/' },
+    { id: '1v1-lol',           name: '1v1.LOL',              emoji: '🔫', color: '#dc2626', tags: ['shooting','multiplayer'],  url: 'https://1v1.lol/' },
+    { id: 'buildroyale',       name: 'BuildRoyale.io',       emoji: '🏗️', color: '#0369a1', tags: ['shooting','multiplayer'],  url: 'https://buildroyale.io/' },
+    { id: 'surviv-io',         name: 'Surviv.io',            emoji: '🪖', color: '#854d0e', tags: ['shooting','multiplayer'],  url: 'https://surviv.io/' },
+    { id: 'kirka-io',          name: 'Kirka.io',             emoji: '🔫', color: '#1e3a8a', tags: ['shooting','multiplayer'],  url: 'https://kirka.io/' },
+    { id: 'ev-io',             name: 'ev.io',                emoji: '🎮', color: '#7c3aed', tags: ['shooting','multiplayer'],  url: 'https://ev.io/' },
+    { id: 'powerline-io',      name: 'Powerline.io',         emoji: '⚡', color: '#1d4ed8', tags: ['arcade','multiplayer'],    url: 'https://powerline.io/' },
+    { id: 'stabfish-io',       name: 'Stabfish.io',          emoji: '🐟', color: '#0369a1', tags: ['multiplayer','action'],    url: 'https://stabfish.io/' },
+    { id: 'littlebigsnake',    name: 'Little Big Snake',     emoji: '🐍', color: '#15803d', tags: ['arcade','multiplayer'],    url: 'https://littlebigsnake.com/' },
+    { id: 'betrayal-io',       name: 'Betrayal.io',          emoji: '🔪', color: '#dc2626', tags: ['multiplayer','action'],    url: 'https://betrayal.io/' },
+    { id: 'warbrokers',        name: 'War Brokers',          emoji: '🪖', color: '#4d7c0f', tags: ['shooting','multiplayer'],  url: 'https://warbrokers.io/' },
+    { id: 'arras-io',          name: 'Arras.io',             emoji: '💥', color: '#1e3a8a', tags: ['arcade','multiplayer'],    url: 'https://arras.io/' },
+    { id: 'zombs-io',          name: 'Zombs.io',             emoji: '🧟', color: '#4d7c0f', tags: ['strategy','multiplayer'],  url: 'https://zombs.io/' },
+    { id: 'krew-io',           name: 'Krew.io',              emoji: '🏴‍☠️', color: '#1e3a8a', tags: ['multiplayer','action'],    url: 'https://krew.io/' },
+    { id: 'starve-io',         name: 'Starve.io',            emoji: '🏕️', color: '#78350f', tags: ['strategy','multiplayer'],  url: 'https://starve.io/' },
+    { id: '2048-game',         name: '2048',                 emoji: '🔢', color: '#b45309', tags: ['puzzle'],                  url: 'https://2048game.com/' },
+    { id: 'foes-io',           name: 'Foes.io',              emoji: '🗡️', color: '#dc2626', tags: ['action','multiplayer'],    url: 'https://foes.io/' },
+    { id: 'miniroyale',        name: 'Mini Royale: Nations', emoji: '🏆', color: '#1e3a8a', tags: ['shooting','multiplayer'],  url: 'https://miniroyale.io/' },
+    { id: 'gats-io',           name: 'Gats.io',              emoji: '🔫', color: '#374151', tags: ['shooting','multiplayer'],  url: 'https://gats.io/' },
+    { id: 'spinz-io',          name: 'Spinz.io',             emoji: '🌀', color: '#7c3aed', tags: ['arcade','multiplayer'],    url: 'https://spinz.io/' },
+    { id: 'ragdoll-hit',       name: 'Ragdoll Hit',          emoji: '🪆', color: '#dc2626', tags: ['action','arcade'],          url: 'https://ragdollhit.com/' },
+    { id: 'ragdoll-archers',   name: 'Ragdoll Archers',      emoji: '🏹', color: '#92400e', tags: ['action','arcade'],          url: 'https://ragdollarchers.io/' },
+];
+
+let sc_favorites = JSON.parse(localStorage.getItem('scicillians_favs') || '[]');
+let sc_filter = 'all';
+let sc_search = '';
+
+function sc_isFav(id) { return sc_favorites.includes(id); }
+
+function sc_toggleFav(e, id) {
+    e.stopPropagation();
+    sc_favorites = sc_isFav(id) ? sc_favorites.filter(f => f !== id) : [...sc_favorites, id];
+    localStorage.setItem('scicillians_favs', JSON.stringify(sc_favorites));
+    renderGames_sc();
+}
+
+function renderGames_sc() {
+    const grid = document.getElementById('sc-grid');
+    const noR  = document.getElementById('sc-noresults');
+    let pool = sc_filter === 'favorites' ? sc_games.filter(g => sc_isFav(g.id)) : sc_games;
+    let filtered = pool.filter(g => {
+        const matchCat = sc_filter === 'all' || sc_filter === 'favorites' || g.tags.includes(sc_filter);
+        const matchQ   = !sc_search || g.name.toLowerCase().includes(sc_search.toLowerCase());
+        return matchCat && matchQ;
+    });
+    if (!filtered.length) {
+        grid.innerHTML = '';
+        noR.style.display = 'block';
+        noR.textContent = sc_filter === 'favorites' ? '⭐ No favorites yet! Click the star on any game.' : 'No games found. Try a different search!';
+        return;
+    }
+    noR.style.display = 'none';
+    grid.innerHTML = filtered.map(g => `
+        <div class="sc-card" onclick="scOpenGame('${g.id}')">
+            <div class="sc-thumb" style="background:linear-gradient(135deg,${g.color}aa,${g.color}44)">
+                <span style="filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))">${g.emoji}</span>
+                <div class="sc-play-icon">▶</div>
+            </div>
+            <div class="sc-info">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <div class="sc-name">${g.name}</div>
+                    <button class="sc-fav-btn ${sc_isFav(g.id) ? 'sc-fav-active' : ''}" onclick="sc_toggleFav(event,'${g.id}')">${sc_isFav(g.id) ? '⭐' : '☆'}</button>
+                </div>
+                <div class="sc-tags">${g.tags.map(t => `<span class="sc-tag">${t}</span>`).join('')}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function scSidebarFilter(el, cat) {
+    document.querySelectorAll('.sc-sidebar-link').forEach(l => l.classList.remove('sc-active'));
+    el.classList.add('sc-active');
+    sc_filter = cat;
+    const titles = { all:'🔥 All Games', action:'⚔️ Action', racing:'🏎️ Racing', puzzle:'🧩 Puzzle', sports:'⚽ Sports', arcade:'👾 Arcade', strategy:'🏰 Strategy', multiplayer:'👥 Multiplayer', shooting:'🔫 Shooting', platformer:'🦘 Platformer', favorites:'⭐ My Favorites' };
+    document.getElementById('sc-title').textContent = titles[cat] || '🎮 Games';
+    document.getElementById('sc-featured').style.display = cat === 'all' ? 'flex' : 'none';
+    // scroll content back to top
+    document.querySelector('.sc-content').scrollTop = 0;
+    renderGames_sc();
+}
+
+function scShowAll() {
+    sc_filter = 'all'; sc_search = '';
+    document.getElementById('sc-search').value = '';
+    document.querySelectorAll('.sc-sidebar-link').forEach(l => l.classList.remove('sc-active'));
+    document.querySelector('.sc-sidebar-link').classList.add('sc-active');
+    document.getElementById('sc-featured').style.display = 'flex';
+    document.getElementById('sc-title').textContent = '🔥 All Games';
+    renderGames_sc();
+}
+
+function scHandleSearch() {
+    sc_search = document.getElementById('sc-search').value;
+    renderGames_sc();
+}
+
+function scOpenGame(id) {
+    const game = sc_games.find(g => g.id === id);
+    if (!game) return;
+    document.getElementById('sc-modal-title').textContent = game.emoji + ' ' + game.name;
+    document.getElementById('gameModal_sc').classList.add('open');
+    document.getElementById('sc-loading').style.display = 'flex';
+    const frame = document.getElementById('gameFrame_sc');
+    frame.style.display = 'none'; frame.src = '';
+    setTimeout(() => {
+        frame.src = game.url;
+        frame.onload = () => { document.getElementById('sc-loading').style.display = 'none'; frame.style.display = 'block'; };
+        setTimeout(() => { document.getElementById('sc-loading').style.display = 'none'; frame.style.display = 'block'; }, 4000);
+    }, 200);
+}
+
+function scCloseGame() {
+    document.getElementById('gameModal_sc').classList.remove('open');
+    const frame = document.getElementById('gameFrame_sc');
+    frame.src = ''; frame.style.display = 'none';
+}
+
+function scGoFullscreen() {
+    const frame = document.getElementById('gameFrame_sc');
+    if (frame.requestFullscreen) frame.requestFullscreen();
+    else if (frame.webkitRequestFullscreen) frame.webkitRequestFullscreen();
+}
+
+function closeScicillians() {
+    document.getElementById('scicilliansOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+    scCloseGame();
+}
+
+// Secret button
+document.getElementById('secretBtn').addEventListener('click', () => {
+    document.getElementById('scicilliansOverlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    if (!window.scicilliansInited) { window.scicilliansInited = true; renderGames_sc(); }
+});
+
+document.getElementById('gameModal_sc').addEventListener('click', function(e) {
+    if (e.target === this) scCloseGame();
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        if (document.getElementById('gameModal_sc').classList.contains('open')) { scCloseGame(); return; }
+        if (document.getElementById('scicilliansOverlay').style.display !== 'none') { closeScicillians(); }
+    }
+});
+</script>
+</body>
+</html>
